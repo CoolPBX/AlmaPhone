@@ -42,7 +42,7 @@ export const useExtensionStore = defineStore('extension', () => {
           return false;
         },
         (response: ExtensionListResponseDto) => {
-          extensions.value = response.data;
+          extensions.value = response.data[0];
           console.log('Fetched extensions:', response.data);
           
           

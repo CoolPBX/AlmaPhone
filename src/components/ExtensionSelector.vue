@@ -113,3 +113,157 @@ const handleRefresh = () => {
   extensionStore.fetchExtensions();
 };
 </script>
+
+<style scoped>
+.extension-selector {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--surface-card);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.logout-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--red-500);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: var(--red-600);
+}
+
+.loading,
+.error-message,
+.no-extensions {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--surface-border);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.clear-error,
+.retry-btn {
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.extensions-list h3 {
+  margin-bottom: 1rem;
+  color: var(--text-color-secondary);
+}
+
+.extension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.extension-card {
+  border: 2px solid var(--surface-border);
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--surface-100);
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.extension-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.extension-card.selected {
+  border-color: var(--primary-color);
+  background-color: var(--primary-50);
+}
+
+.extension-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.extension-details {
+  margin-top: 0.5rem;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+}
+
+.selection-indicator {
+  margin-top: 1rem;
+  text-align: right;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.selected-info {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--surface-border);
+}
+
+.selected-details p {
+  margin: 0.3rem 0;
+}
+
+.proceed-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.proceed-btn:hover {
+  background: var(--primary-600);
+}
+</style>
