@@ -5,10 +5,6 @@
   </div>
 </template>
 
-<script setup>
-import HelloWorld from '@/presentation/components/HelloWorld.vue'
-</script>
-
 <style scoped>
 .home {
   text-align: center;

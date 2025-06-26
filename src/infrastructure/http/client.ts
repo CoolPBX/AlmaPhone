@@ -1,13 +1,13 @@
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import axios from 'axios'
-import type { AxiosRequestConfig, AxiosInstance, AxiosResponse } from 'axios'
 
 const httpClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+    Accept: 'application/json',
+  },
 })
 
 // Request interceptor
@@ -19,7 +19,7 @@ httpClient.interceptors.request.use(
     }
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 )
 
 // Response interceptor
@@ -31,7 +31,7 @@ httpClient.interceptors.response.use(
       window.location.href = '/login'
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 export default httpClient

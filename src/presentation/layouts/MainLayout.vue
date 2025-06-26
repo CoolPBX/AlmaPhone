@@ -6,11 +6,6 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { useAppStore } from '@/stores'
-const appStore = useAppStore()
-</script>
-
 <style scoped>
 .layout-wrapper {
   min-height: 100vh;

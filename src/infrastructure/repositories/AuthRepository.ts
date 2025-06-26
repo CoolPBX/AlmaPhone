@@ -1,6 +1,6 @@
-import type { AuthRepositoryContract } from '../../domain/contracts/AuthRepositoryContracts';
-import type { LoginRequestDto, LoginResponseDto, ApiErrorDto } from '../../domain/dtos/AuthDto';
-import { Either, left, right } from '../../utils/Either';
+import type { AuthRepositoryContract } from '@/domain/contracts/AuthRepositoryContracts.ts';
+import type { LoginRequestDto, LoginResponseDto, ApiErrorDto } from '@/domain/dtos/AuthDto.ts';
+import { Either, left, right } from '@/utils/Either.ts';
 import axios, { AxiosError } from 'axios';
 
 export class AuthRepository implements AuthRepositoryContract {
@@ -58,10 +58,10 @@ export class AuthRepository implements AuthRepositoryContract {
     }
   }
 
-  private handleError(error: any): ApiErrorDto {
+  private handleError(error: unknown): ApiErrorDto {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      
+
       if (axiosError.response) {
         const data = axiosError.response.data as any;
         return {
@@ -70,7 +70,7 @@ export class AuthRepository implements AuthRepositoryContract {
           errors: data.errors || undefined
         };
       }
-      
+
       if (axiosError.request) {
         return {
           message: 'Network error - No response from server',
