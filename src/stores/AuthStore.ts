@@ -83,8 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = storedToken
         user.value = JSON.parse(storedUser)
         return true
-      } catch (error) {
-        // Si hay error al parsear, limpiar localStorage
+      } catch {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user_data')
         return false

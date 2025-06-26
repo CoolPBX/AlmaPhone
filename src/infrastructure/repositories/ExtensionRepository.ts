@@ -5,51 +5,50 @@ import { Either, left, right } from '../../utils/Either';
 import axios, { AxiosError } from 'axios';
 
 export class ExtensionRepository implements ExtensionRepositoryContract {
-  private readonly baseUrl: string;
+  private readonly baseUrl: string
 
-  constructor(baseUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://coolpbx.local') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') {
+    this.baseUrl = baseUrl
   }
 
-  async getExtensions(request: ExtensionListRequestDto): Promise<Either<ApiErrorDto, ExtensionListResponseDto>> {
+  async getExtensions(
+    request: ExtensionListRequestDto,
+  ): Promise<Either<ApiErrorDto, ExtensionListResponseDto>> {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/my/extensions`, {
+      const response = await axios.get(`${this.baseUrl}/my/extensions`, {
         headers: {
-          'Authorization': `${request.token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      return right(response.data);
+          Authorization: `${request.token}`,
+          Accept: 'application/json',
+        },
+      })
+      
+      return right(response.data)
     } catch (error) {
-      return left(this.handleError(error));
+      return left(this.handleError(error))
     }
   }
 
-  private handleError(error: any): ApiErrorDto {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
-      
+  private handleError(error: unknown): ApiErrorDto {
+    if (error instanceof AxiosError) {
+      const axiosError = error as AxiosError
       if (axiosError.response) {
-        const data = axiosError.response.data as any;
+        console.error('API Error:', axiosError.response)
         return {
-          message: data.message || 'An error occurred',
+          message: 'Whoops! Something went wrong.',
           status: axiosError.response.status,
-          errors: data.errors || undefined
-        };
-      }
-      
-      if (axiosError.request) {
+        }
+      } else if (axiosError.request) {
+        console.error('No response received:', axiosError.request)
         return {
-          message: 'Network error - No response from server',
-          status: 0
-        };
+          message: 'Whoops! Something went wrong.',
+          status: 500,
+        }
       }
     }
 
     return {
-      message: error.message || 'Unknown error occurred',
-      status: 500
-    };
+      message: 'Unknown error occurred',
+      status: 500,
+    }
   }
 }

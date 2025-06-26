@@ -42,12 +42,14 @@ export const useExtensionStore = defineStore('extension', () => {
           return false;
         },
         (response: ExtensionListResponseDto) => {
-          extensions.value = response.data[0];
-          console.log('Fetched extensions:', response.data);
-          
-          
-          if (response.data.length === 1) {
-            selectedExtension.value = response.data[0];
+          if (response.data && response.data.length > 0) {
+            extensions.value = response.data;
+
+            if (response.data.length === 1 && response.data[0]) {
+              selectedExtension.value = response.data[0];
+            }
+          } else {
+            extensions.value = [];
           }
           
           return true;
@@ -61,7 +63,6 @@ export const useExtensionStore = defineStore('extension', () => {
   const selectExtension =   (extension: ExtensionItemDto): void => {
     selectedExtension.value = extension;
     
-    // Persistir selección
     localStorage.setItem('selected_extension', JSON.stringify(extension));
   };
 
@@ -72,7 +73,7 @@ export const useExtensionStore = defineStore('extension', () => {
       try {
         selectedExtension.value = JSON.parse(stored);
         return true;
-      } catch (error) {
+      } catch {
         localStorage.removeItem('selected_extension');
         return false;
       }

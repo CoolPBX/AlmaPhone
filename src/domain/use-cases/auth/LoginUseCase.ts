@@ -1,6 +1,6 @@
-import type { AuthRepositoryContract } from '../../contracts/AuthRepositoryContracts';
-import type { LoginRequestDto, LoginResponseDto, ApiErrorDto } from '../../dtos/AuthDto';
-import { Either } from '../../../utils/Either';
+import type { AuthRepositoryContract } from '../../contracts/AuthRepositoryContracts'
+import type { LoginRequestDto, LoginResponseDto, ApiErrorDto } from '../../dtos/AuthDto'
+import { Either, left } from '../../../utils/Either'
 
 export class LoginUseCase {
   constructor(private authRepository: AuthRepositoryContract) {}
@@ -8,40 +8,28 @@ export class LoginUseCase {
   async execute(credentials: LoginRequestDto): Promise<Either<ApiErrorDto, LoginResponseDto>> {
     // Validaciones básicas
     if (!credentials.user_email || !credentials.password) {
-      return {
-        isLeft: () => true,
-        isRight: () => false,
-        fold: (onLeft: any) => onLeft({
-          message: 'Username and password are required',
-          status: 400
-        })
-      } as any;
+      return left({
+        message: 'Username and password are required',
+        status: 400,
+      })
     }
 
     // Validar formato de email si es necesario
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(credentials.user_email)) {
-      return {
-        isLeft: () => true,
-        isRight: () => false,
-        fold: (onLeft: any) => onLeft({
-          message: 'Invalid email format',
-          status: 400
-        })
-      } as any;
+      return left({
+        message: 'Invalid email format',
+        status: 400,
+      })
     }
 
     try {
-      return await this.authRepository.login(credentials);
-    } catch (error) {
-      return {
-        isLeft: () => true,
-        isRight: () => false,
-        fold: (onLeft: any) => onLeft({
-          message: 'Network error occurred',
-          status: 500
-        })
-      } as any;
+      return await this.authRepository.login(credentials)
+    } catch {
+      return left({
+        message: 'Network error occurred',
+        status: 500,
+      })
     }
   }
 }
