@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized } from 'vue-router'
-import MainLayout from '@/presentation/layouts/MainLayout.vue'
-import HomeView from '@/views/HomeView.vue'
-import LoginView from '@/components/LoginForm.vue'
-import ExtensionsView from '@/components/ExtensionSelector.vue'
-import PhoneView from '@/presentation/views/PhoneView.vue'
-import { useAuthStore } from '@/stores/AuthStore'
+import ExtensionsView from '@/components/extension-selector/ExtensionSelector.vue'
+import { useAuthStore } from '@/components/login/repositories/internal/AuthStore'
+import LoginForm from '@/components/login/LoginForm.vue'
+import MainLayout from '@/core/presentation/layouts/MainLayout.vue'
 
 // Helper functions for route guards
 const requiresAuth = (route: RouteLocationNormalized): boolean => {
@@ -23,7 +21,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: LoginForm,
       meta: {
         requiresAuth: false,
         hideForAuthenticated: true,
@@ -36,23 +34,17 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
-          path: '',
-          name: 'home',
-          component: HomeView,
-          meta: { title: 'Home' },
-        },
-        {
           path: 'extensions',
           name: 'extensions',
           component: ExtensionsView,
           meta: { title: 'Extensions' },
         },
-        {
-          path: 'phone',
-          name: 'phone',
-          component: PhoneView,
-          meta: { title: 'Phone' },
-        },
+        // {
+        //   path: 'phone',
+        //   name: 'phone',
+        //   component: PhoneView,
+        //   meta: { title: 'Phone' },
+        // },
       ],
     },
 
