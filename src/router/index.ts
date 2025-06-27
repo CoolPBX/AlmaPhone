@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized } from 'vue-router'
 import ExtensionsView from '@/components/extension-selector/ExtensionSelector.vue'
-import { useAuthStore } from '@/components/login/repositories/internal/AuthStore'
 import LoginForm from '@/components/login/LoginForm.vue'
 import MainLayout from '@/core/presentation/layouts/MainLayout.vue'
+import { useAuthStore } from '@/components/login/AuthStore'
 
 // Helper functions for route guards
 const requiresAuth = (route: RouteLocationNormalized): boolean => {
@@ -11,6 +11,11 @@ const requiresAuth = (route: RouteLocationNormalized): boolean => {
 }
 
 const isPublicRoute = (route: RouteLocationNormalized): boolean => {
+  console.log(
+    'Checking if route is public:',
+    route.path,
+    route.matched.some((record) => record.meta.hideForAuthenticated === true),
+  )
   return route.matched.some((record) => record.meta.hideForAuthenticated === true)
 }
 
@@ -58,14 +63,22 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+
+  if (!authStore.user && !authStore.isAuthenticated) {
+    authStore.restoreSession()
+  }
+
   const requiresAuthCheck = requiresAuth(to)
   const isPublicRouteCheck = isPublicRoute(to)
+  console.log('authStore.isAuthenticated:', authStore.apiKey, authStore.isAuthenticated)
 
   if (!authStore.isAuthenticated && requiresAuthCheck) {
     next('/login')
   } else if (authStore.isAuthenticated && isPublicRouteCheck) {
+    next('/extensions')
+  } else if (to.path === '/') {
     next('/extensions')
   } else {
     next()

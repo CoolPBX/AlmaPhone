@@ -47,6 +47,6 @@ export const ApiErrorSchema = z.object({
 // Type inference from schemas
 export type LoginRequestDto = z.infer<typeof LoginRequestSchema>
 export type UserDataDto = z.infer<typeof UserDataSchema>
-export type AvailableExtensionsDto = z.infer<typeof AvailableExtensionsSchema>
+// export type AvailableExtensionsDto = z.infer<typeof AvailableExtensionsSchema>
 export type LoginResponseDto = z.infer<typeof LoginResponseSchema>
 export type ApiErrorDto = z.infer<typeof ApiErrorSchema>

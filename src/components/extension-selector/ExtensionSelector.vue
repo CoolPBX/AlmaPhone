@@ -65,9 +65,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../login/repositories/internal/AuthStore'
-import { useExtensionStore } from './repositories/internal/ExtensionStore'
 import type { ExtensionItemDto } from './domain/schemas/ExtensionSchemas'
+import { useAuthStore } from '../login/AuthStore'
+import { useExtensionStore } from './ExtensionStore'
 
 const authStore = useAuthStore()
 const extensionStore = useExtensionStore()
