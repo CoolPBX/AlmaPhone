@@ -1,0 +1,88 @@
+export default {
+  // Common
+  common: {
+    loading: 'Loading...',
+    error: 'Error',
+    retry: 'Retry',
+    refresh: 'Refresh',
+    continue: 'Continue',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    close: 'Close',
+    save: 'Save',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    remove: 'Remove',
+    select: 'Select',
+    selected: 'Selected',
+    update: 'Update',
+  },
+
+  // Authentication
+  auth: {
+    login: 'Login',
+    logout: 'Logout',
+    email: 'Email',
+    password: 'Password',
+    rememberMe: 'Remember me',
+    forgotPassword: 'Forgot password?',
+    signIn: 'Sign In',
+    signOut: 'Sign Out',
+    invalidCredentials: 'Invalid credentials',
+    loginRequired: 'Login required',
+    sessionExpired: 'Session expired',
+    connectedAs: 'Connected as',
+  },
+
+  // Extension Selector
+  extensionSelector: {
+    title: 'Select Extension',
+    loadingExtensions: 'Loading extensions...',
+    noExtensions: 'No extensions available',
+    extensionSelected: 'Extension selected',
+    extension: 'Extension',
+    action: 'Action',
+    selectExtension: 'Select',
+    extensionSelectedLabel: 'Selected',
+  },
+
+  // Phone
+  phone: {
+    title: 'Phone',
+    dial: 'Dial',
+    call: 'Call',
+    hangup: 'Hang up',
+    answer: 'Answer',
+    reject: 'Reject',
+    hold: 'Hold',
+    transfer: 'Transfer',
+    mute: 'Mute',
+    unmute: 'Unmute',
+    volume: 'Volume',
+    keypad: 'Keypad',
+    contacts: 'Contacts',
+    history: 'History',
+    settings: 'Settings',
+  },
+
+  // Errors
+  errors: {
+    networkError: 'Network error. Please check your connection.',
+    serverError: 'Server error. Please try again later.',
+    unauthorized: 'Unauthorized access.',
+    forbidden: 'Access forbidden.',
+    notFound: 'Resource not found.',
+    timeout: 'Request timeout.',
+    unknown: 'An unknown error occurred.',
+  },
+
+  // Success messages
+  success: {
+    loginSuccess: 'Login successful',
+    logoutSuccess: 'Logout successful',
+    saved: 'Saved successfully',
+    updated: 'Updated successfully',
+    deleted: 'Deleted successfully',
+  },
+}

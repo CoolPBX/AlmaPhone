@@ -56,24 +56,6 @@ export class AuthRepository implements AuthRepositoryContract {
     }
   }
 
-  async logout(): Promise<Either<ApiErrorDto, void>> {
-    try {
-      await axios.post(
-        `${this.baseUrl}/api/auth/logout`,
-        {},
-        {
-          headers: {
-            Authorization: `${this.getStoredToken()}`,
-            Accept: 'application/json',
-          },
-        },
-      )
-      return right(undefined)
-    } catch (error) {
-      return left(this.handleError(error))
-    }
-  }
-
   async refreshToken(): Promise<Either<ApiErrorDto, LoginResponseDto>> {
     try {
       const response = await axios.post(

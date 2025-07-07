@@ -2,7 +2,6 @@ import type { Container } from './Container'
 import {
   AUTH_REPOSITORY,
   LOGIN_USE_CASE,
-  LOGOUT_USE_CASE,
   EXTENSION_REPOSITORY,
   GET_EXTENSIONS_USE_CASE,
   HTTP_CLIENT,
@@ -15,7 +14,6 @@ import { ExtensionRepository } from '@/components/extension-selector/repositorie
 
 // Import auth use cases
 import { LoginUseCase } from '@/components/login/domain/use-cases/auth/LoginUseCase'
-import { LogoutUseCase } from '@/components/login/domain/use-cases/auth/LogoutUseCase'
 
 // Import extension use cases
 import { GetExtensionsUseCase } from '@/components/extension-selector/domain/use-cases/extension/GetExtensionsUseCase'
@@ -48,11 +46,6 @@ export function registerServices(container: Container): void {
   container.registerSingleton(LOGIN_USE_CASE, () => {
     const authRepository = container.resolveService<AuthRepository>(AUTH_REPOSITORY)
     return new LoginUseCase(authRepository)
-  })
-
-  container.registerSingleton(LOGOUT_USE_CASE, () => {
-    const authRepository = container.resolveService<AuthRepository>(AUTH_REPOSITORY)
-    return new LogoutUseCase(authRepository)
   })
 
   // Register extension use cases using factory functions

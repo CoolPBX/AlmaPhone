@@ -8,7 +8,6 @@ import { defineStore } from 'pinia'
 import { computed, readonly, ref } from 'vue'
 import { AuthRepository } from '@/components/login/repositories/external/AuthRepository'
 import { LoginUseCase } from './domain/use-cases/auth/LoginUseCase'
-import { LogoutUseCase } from './domain/use-cases/auth/LogoutUseCase'
 
 export const useAuthStore = defineStore(
   'auth',
@@ -21,7 +20,6 @@ export const useAuthStore = defineStore(
     // Repositories & Use Cases
     const authRepository = new AuthRepository()
     const loginUseCase = new LoginUseCase(authRepository)
-    const logoutUseCase = new LogoutUseCase(authRepository)
 
     // Getters
     const isAuthenticated = computed(() => !!user.value?.api_key && !!user.value)
@@ -61,20 +59,13 @@ export const useAuthStore = defineStore(
 
     const logout = async (): Promise<void> => {
       isLoading.value = true
+      user.value = null
+      error.value = null
 
-      try {
-        await logoutUseCase.execute()
-      } finally {
-        // Limpiar estado independientemente del resultado
-        user.value = null
-        error.value = null
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
 
-        // Limpiar localStorage
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('user_data')
-
-        isLoading.value = false
-      }
+      isLoading.value = false
     }
 
     const restoreSession = (): boolean => {

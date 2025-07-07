@@ -1,88 +1,85 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteLocationNormalized } from 'vue-router'
-import ExtensionsView from '@/components/extension-selector/ExtensionSelector.vue'
-import LoginForm from '@/components/login/LoginForm.vue'
-import MainLayout from '@/core/presentation/layouts/MainLayout.vue'
+import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/components/login/AuthStore'
+import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
+import {
+  createPublicRoute,
+  createProtectedRoute,
+  withLayout,
+  type RouteConfig,
+} from './routeHelpers'
 
-// Helper functions for route guards
-const requiresAuth = (route: RouteLocationNormalized): boolean => {
-  return route.matched.some((record) => record.meta.requiresAuth !== false)
-}
+const routeConfigs: RouteConfig[] = [
+  createPublicRoute('/login', () => import('@/components/login/LoginForm.vue'), {
+    name: 'login',
+    title: 'Login',
+  }),
+  createProtectedRoute('/phone', () => import('@/views/PhoneView.vue'), {
+    name: 'phone',
+    title: 'Phone',
+    requiresExtension: true,
+  }),
+]
 
-const isPublicRoute = (route: RouteLocationNormalized): boolean => {
-  console.log(
-    'Checking if route is public:',
-    route.path,
-    route.matched.some((record) => record.meta.hideForAuthenticated === true),
-  )
-  return route.matched.some((record) => record.meta.hideForAuthenticated === true)
-}
+// Generate routes from configurations
+const routes: RouteRecordRaw[] = [
+  ...routeConfigs.map(withLayout),
+  {
+    path: '/',
+    redirect: '/phone',
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: () => {
+      const authStore = useAuthStore()
+      return authStore.isAuthenticated ? '/phone' : '/login'
+    },
+  },
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    // Public routes (no auth required)
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginForm,
-      meta: {
-        requiresAuth: false,
-        hideForAuthenticated: true,
-        title: 'Login',
-      },
-    },
-    {
-      path: '/',
-      component: MainLayout,
-      meta: { requiresAuth: true },
-      children: [
-        {
-          path: 'extensions',
-          name: 'extensions',
-          component: ExtensionsView,
-          meta: { title: 'Extensions' },
-        },
-        // {
-        //   path: 'phone',
-        //   name: 'phone',
-        //   component: PhoneView,
-        //   meta: { title: 'Phone' },
-        // },
-      ],
-    },
-
-    {
-      path: '/:pathMatch(.*)*',
-      redirect: () => {
-        const authStore = useAuthStore()
-        return authStore.isAuthenticated ? '/' : '/login'
-      },
-    },
-  ],
+  routes,
 })
 
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+  const extensionStore = useExtensionStore()
 
+  // Restore session if needed
   if (!authStore.user && !authStore.isAuthenticated) {
     authStore.restoreSession()
   }
 
-  const requiresAuthCheck = requiresAuth(to)
-  const isPublicRouteCheck = isPublicRoute(to)
-  console.log('authStore.isAuthenticated:', authStore.apiKey, authStore.isAuthenticated)
-
-  if (!authStore.isAuthenticated && requiresAuthCheck) {
-    next('/login')
-  } else if (authStore.isAuthenticated && isPublicRouteCheck) {
-    next('/extensions')
-  } else if (to.path === '/') {
-    next('/extensions')
-  } else {
-    next()
+  // Extract route meta with defaults
+  const meta = {
+    requiresAuth: true,
+    requiresExtension: true,
+    ...to.meta,
   }
+
+  console.log(`Navigating to ${to.path}`, {
+    isAuthenticated: authStore.isAuthenticated,
+    hasExtension: !!extensionStore.selectedExtension,
+    routeMeta: meta,
+  })
+
+  const needsAuth = meta.requiresAuth || meta.requiresExtension
+
+  if (needsAuth && !authStore.isAuthenticated && to.path !== '/login') {
+    console.log('Redirecting to login: user not authenticated')
+    next('/login')
+    return
+  }
+
+  if (meta.requiresExtension && !extensionStore.selectedExtension && to.path !== '/login') {
+    console.log('Redirecting to login: extension required but not selected')
+    authStore.logout()
+    next('/login')
+    return
+  }
+
+  next()
 })
 
 export default router

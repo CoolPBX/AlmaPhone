@@ -1,69 +1,80 @@
 <template>
-  <div class="flex align-items-center justify-content-center min-h-screen px-3">
-    <div class="w-full max-w-md">
-      <Card class="shadow-2">
-        <template #header>
-          <div class="text-center py-4">
-            <Avatar icon="pi pi-user" size="xlarge" class="mb-3" />
-            <h2 class="text-2xl font-semibold m-0">Iniciar Sesión</h2>
-          </div>
-        </template>
+  <div class="w-full">
+    <!-- Login Form -->
+    <Card v-if="!showExtensionModal" class="shadow-2">
+      <template #header>
+        <div class="text-center py-4">
+          <Avatar icon="pi pi-user" size="xlarge" class="mb-3" />
+          <h2 class="text-2xl font-semibold m-0">{{ t('auth.login') }}</h2>
+        </div>
+      </template>
 
-        <template #content>
-          <form @submit.prevent="handleLogin" class="flex flex-column gap-4">
-            <FloatLabel>
-              <InputText
-                id="username"
-                v-model="form.username"
-                type="email"
-                :invalid="!!(authStore.error && !form.username)"
-                :disabled="authStore.isLoading"
-                class="w-full"
-              />
-              <label for="username">Usuario (Email)</label>
-            </FloatLabel>
-
-            <FloatLabel>
-              <Password
-                id="password"
-                v-model="form.password"
-                :feedback="false"
-                toggleMask
-                :invalid="!!(authStore.error && !form.password)"
-                :disabled="authStore.isLoading"
-                class="w-full"
-              />
-              <label for="password">Contraseña</label>
-            </FloatLabel>
-
-            <Message
-              v-if="authStore.error"
-              severity="error"
-              :closable="true"
-              @close="authStore.clearError"
-            >
-              {{ authStore.error }}
-            </Message>
-
-            <Button
-              type="submit"
-              :loading="authStore.isLoading"
-              :disabled="!isFormValid"
-              label="Iniciar Sesión"
-              loadingIcon="pi pi-spin pi-spinner"
+      <template #content>
+        <!-- <div class="mb-4">
+          <LanguageSwitcher />
+        </div> -->
+        <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+          <FloatLabel>
+            <InputText
+              id="username"
+              v-model="form.username"
+              type="email"
+              :invalid="!!(authStore.error && !form.username)"
+              :disabled="authStore.isLoading"
               class="w-full"
-              size="large"
             />
-          </form>
-        </template>
-      </Card>
-    </div>
+            <label for="username">{{ t('auth.email') }}</label>
+          </FloatLabel>
+
+          <FloatLabel class="mt-3">
+            <Password
+              id="password"
+              v-model="form.password"
+              :feedback="false"
+              toggleMask
+              :invalid="!!(authStore.error && !form.password)"
+              :disabled="authStore.isLoading"
+              class="w-full"
+              inputClass="w-full"
+            />
+            <label for="password">{{ t('auth.password') }}</label>
+          </FloatLabel>
+
+          <Message
+            v-if="authStore.error"
+            severity="error"
+            :closable="true"
+            @close="authStore.clearError"
+          >
+            {{ authStore.error }}
+          </Message>
+
+          <Button
+            type="submit"
+            :loading="authStore.isLoading"
+            :disabled="!isFormValid"
+            :label="t('auth.signIn')"
+            loadingIcon="pi pi-spin pi-spinner"
+            class="w-full"
+            size="large"
+          />
+        </form>
+      </template>
+    </Card>
+
+    <!-- Extension Selector Modal -->
+    <ExtensionSelector
+      v-if="showExtensionModal"
+      @extension-selected="onExtensionSelected"
+      @logout="onLogout"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from './AuthStore'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -72,18 +83,19 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 import FloatLabel from 'primevue/floatlabel'
 import Avatar from 'primevue/avatar'
+import ExtensionSelector from '@/components/extension-selector/ExtensionSelector.vue'
+import LanguageSwitcher from '@/core/presentation/components/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
-
-onMounted(() => {
-  console.log('AuthStore mounted:', authStore.user, authStore.isAuthenticated)
-})
 
 const form = ref({
   username: '',
   password: '',
 })
+
+const showExtensionModal = ref(false)
 
 const isFormValid = computed(() => {
   return (
@@ -100,7 +112,17 @@ const handleLogin = async () => {
   })
 
   if (success) {
-    router.push('/extensions')
+    showExtensionModal.value = true
   }
+}
+
+const onExtensionSelected = () => {
+  showExtensionModal.value = false
+  router.push('/phone')
+}
+
+const onLogout = () => {
+  showExtensionModal.value = false
+  authStore.logout()
 }
 </script>
