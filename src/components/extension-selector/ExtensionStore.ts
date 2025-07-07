@@ -111,6 +111,10 @@ export const useExtensionStore = defineStore(
     }
   },
   {
-    persist: true,
+    persist: {
+      key: 'extension-store',
+      storage: localStorage,
+      pick: ['selectedExtension', 'extensions'],
+    },
   },
 )

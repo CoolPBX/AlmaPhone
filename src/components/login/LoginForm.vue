@@ -84,10 +84,14 @@ import Message from 'primevue/message'
 import FloatLabel from 'primevue/floatlabel'
 import Avatar from 'primevue/avatar'
 import ExtensionSelector from '@/components/extension-selector/ExtensionSelector.vue'
-import LanguageSwitcher from '@/core/presentation/components/LanguageSwitcher.vue'
+import { useSipStore } from './SipStore'
+import { useExtensionStore } from '../extension-selector/ExtensionStore'
+// import LanguageSwitcher from '@/core/presentation/components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const extensionStore = useExtensionStore()
+const sipStore = useSipStore()
 const router = useRouter()
 
 const form = ref({
@@ -118,6 +122,13 @@ const handleLogin = async () => {
 
 const onExtensionSelected = () => {
   showExtensionModal.value = false
+  sipStore.initializeSip({
+    server: 'wss://hornblower.doesnotexist.com:7443',
+    username: authStore.user?.username || '',
+    password: extensionStore.selectedExtension?.password || '',
+    domain: 'hornblower.doesnotexist.com',
+    displayName:  'LDLQ2',
+  })
   router.push('/phone')
 }
 
