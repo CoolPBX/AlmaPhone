@@ -1,0 +1,88 @@
+export default {
+  // Common
+  common: {
+    loading: 'Cargando...',
+    error: 'Error',
+    retry: 'Reintentar',
+    refresh: 'Actualizar',
+    continue: 'Continuar',
+    cancel: 'Cancelar',
+    confirm: 'Confirmar',
+    close: 'Cerrar',
+    save: 'Guardar',
+    delete: 'Eliminar',
+    edit: 'Editar',
+    add: 'Agregar',
+    remove: 'Quitar',
+    select: 'Seleccionar',
+    selected: 'Seleccionada',
+    update: 'Actualizar',
+  },
+
+  // Authentication
+  auth: {
+    login: 'Iniciar Sesión',
+    logout: 'Cerrar Sesión',
+    email: 'Correo Electrónico',
+    password: 'Contraseña',
+    rememberMe: 'Recordarme',
+    forgotPassword: '¿Olvidaste tu contraseña?',
+    signIn: 'Iniciar Sesión',
+    signOut: 'Cerrar Sesión',
+    invalidCredentials: 'Credenciales inválidas',
+    loginRequired: 'Inicio de sesión requerido',
+    sessionExpired: 'Sesión expirada',
+    connectedAs: 'Conectado como',
+  },
+
+  // Extension Selector
+  extensionSelector: {
+    title: 'Seleccionar Extensión',
+    loadingExtensions: 'Cargando extensiones...',
+    noExtensions: 'No hay extensiones disponibles',
+    extensionSelected: 'Extensión seleccionada',
+    extension: 'Extensión',
+    action: 'Acción',
+    selectExtension: 'Seleccionar',
+    extensionSelectedLabel: 'Seleccionada',
+  },
+
+  // Phone
+  phone: {
+    title: 'Teléfono',
+    dial: 'Marcar',
+    call: 'Llamar',
+    hangup: 'Colgar',
+    answer: 'Responder',
+    reject: 'Rechazar',
+    hold: 'Retener',
+    transfer: 'Transferir',
+    mute: 'Silenciar',
+    unmute: 'Activar sonido',
+    volume: 'Volumen',
+    keypad: 'Teclado',
+    contacts: 'Contactos',
+    history: 'Historial',
+    settings: 'Configuración',
+  },
+
+  // Errors
+  errors: {
+    networkError: 'Error de red. Por favor verifica tu conexión.',
+    serverError: 'Error del servidor. Por favor intenta más tarde.',
+    unauthorized: 'Acceso no autorizado.',
+    forbidden: 'Acceso prohibido.',
+    notFound: 'Recurso no encontrado.',
+    timeout: 'Tiempo de espera agotado.',
+    unknown: 'Ocurrió un error desconocido.',
+  },
+
+  // Success messages
+  success: {
+    loginSuccess: 'Inicio de sesión exitoso',
+    logoutSuccess: 'Cierre de sesión exitoso',
+    saved: 'Guardado exitosamente',
+    updated: 'Actualizado exitosamente',
+    deleted: 'Eliminado exitosamente',
+  },
+}
