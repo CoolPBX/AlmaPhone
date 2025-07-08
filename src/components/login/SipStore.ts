@@ -15,10 +15,10 @@ export const useSipStore = defineStore('sip', () => {
   // const audioElement = ref(null)
 
   const sipConfig = ref({
-    server: 'wss://tu-servidor-fusionpbx.com:7443',
+    server: 'wss://hornblower.doesnotexist.com:7443',
     username: '',
     password: '',
-    domain: 'tu-dominio.com',
+    domain: 'hornblower.doesnotexist.com',
     displayName: '',
   })
 
@@ -31,7 +31,6 @@ export const useSipStore = defineStore('sip', () => {
       error.value = null
 
       // Crear UserAgent
-      // `sip:${sipConfig.value.username}@${sipConfig.value.domain}`
       const uri = new URI(
         'sip',
         sipConfig.value.username,

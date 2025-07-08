@@ -100,6 +100,7 @@ export const createPublicRoute = (
     meta: createRouteMeta({
       title: options.title,
       requiresAuth: false,
+      requiresExtension: false, 
     }),
   })
 

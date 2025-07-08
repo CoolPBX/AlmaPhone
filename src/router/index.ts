@@ -51,6 +51,10 @@ router.beforeEach(async (to, _from, next) => {
     authStore.restoreSession()
   }
 
+  if (authStore.isAuthenticated && !extensionStore.selectedExtension) {
+    extensionStore.restoreSelectedExtension()
+  }
+
   // Extract route meta with defaults
   const meta = {
     requiresAuth: true,
@@ -73,8 +77,7 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (meta.requiresExtension && !extensionStore.selectedExtension && to.path !== '/login') {
-    console.log('Redirecting to login: extension required but not selected')
-    authStore.logout()
+    console.log('Redirecting to login: extension required but not selected', extensionStore.selectedExtension)
     next('/login')
     return
   }
