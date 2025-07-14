@@ -1,12 +1,12 @@
 <template>
   <div class="softphone-container flex gap-4 p-4 bg-gray-100 dark:bg-gray-900 min-h-screen">
-    <!-- Panel principal del teléfono - ancho fijo 320px -->
-    <div class="phone-dialer bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 w-[320px] flex-shrink-0">
-      <!-- Header con información de la extensión -->
+    <div
+      class="phone-dialer bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 w-[320px] flex-shrink-0">
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ extensionStore.selectedExtension?.extension }} ({{ extensionStore.selectedExtension?.effective_caller_id_name ?? 'Name no available' }})
+            {{ extensionStore.selectedExtension?.extension }} ({{
+              extensionStore.selectedExtension?.effective_caller_id_name ?? '-' }})
           </h3>
           <div class="flex items-center space-x-2">
             <div :class="connectionStatusClass" class="w-3 h-3 rounded-full"></div>
@@ -17,7 +17,6 @@
         </div>
       </div>
 
-      <!-- Display del número -->
       <div class="mb-6">
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
           <input v-model="displayNumber" type="text" readonly placeholder="Ingrese un número"
@@ -25,7 +24,6 @@
         </div>
       </div>
 
-      <!-- Teclado numérico -->
       <div class="mb-6">
         <div class="grid grid-cols-3 gap-3">
           <button v-for="key in dialpadKeys" :key="key.value" @click="addDigit(key.value)" :disabled="isCallActive"
@@ -38,9 +36,7 @@
         </div>
       </div>
 
-      <!-- Botones de acción principales -->
-      <div class="flex justify-center space-x-4 mb-6">
-        <!-- Botón de llamada -->
+      <div class="flex justify-center space-x-3 mb-6">
         <button @click="handleCall" :disabled="!canCall" :class="callButtonClass"
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
           <svg v-if="!isCallActive" class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,15 +49,20 @@
           </svg>
         </button>
 
-        <!-- Botón de borrar unificado -->
-        <button 
-          @mousedown="startDelete"
-          @mouseup="endDelete"
-          @mouseleave="endDelete"
-          @touchstart="startDelete"
-          @touchend="endDelete"
-          @touchcancel="endDelete"
-          :disabled="displayNumber.length === 0 || isCallActive"
+        <button @click="toggleMute"
+          :class="phoneStore.isMuted ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500' : 'bg-gray-500 hover:bg-gray-600 focus:ring-gray-500'"
+          :disabled="!isCallActive"
+          class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path v-if="phoneStore.isMuted" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5.586 5.586A2 2 0 001 8v8a2 2 0 003.414 1.414L16 6.828V4a2 2 0 00-3.414-1.414L5.586 5.586zM17 17l-4-4m0 0L9 9m4 4l4-4m-4 4v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6" />
+            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </button>
+
+        <button @mousedown="startDelete" @mouseup="endDelete" @mouseleave="endDelete" @touchstart="startDelete"
+          @touchend="endDelete" @touchcancel="endDelete" :disabled="displayNumber.length === 0 || isCallActive"
           :class="isDeleting ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500' : 'bg-gray-500 hover:bg-gray-600 focus:ring-gray-500'"
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +72,6 @@
         </button>
       </div>
 
-      <!-- Estado de la llamada -->
       <div v-if="isCallActive" class="mb-4">
         <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
           <div class="flex items-center justify-between">
@@ -88,7 +88,6 @@
         </div>
       </div>
 
-      <!-- Historial de llamadas recientes -->
       <div class="mt-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
           Llamadas Recientes
@@ -114,10 +113,10 @@
       </div>
     </div>
 
-    <!-- Panel de controles - 50% del espacio restante -->
-    <div class="control-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+    <div
+      class="control-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Controles</h3>
-      
+
       <!-- Estado de registro -->
       <div class="mb-6">
         <div class="bg-red-50 dark:bg-red-900 rounded-lg p-4 border border-red-200 dark:border-red-700">
@@ -132,42 +131,57 @@
         </div>
       </div>
 
-      <!-- Botones principales en grilla -->
       <div class="grid grid-cols-2 gap-3 mb-6">
-        <!-- Redial -->
-        <button @click="redial" :disabled="!lastDialedNumber" 
-          v-tooltip.top="'Repetir última llamada'"
+        <button @click="redial" :disabled="!lastDialedNumber" v-tooltip.top="'Repetir última llamada'"
           class="control-button bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex flex-col items-center space-y-1">
           <RotateCcw :size="20" />
           <span class="text-xs">ReDial</span>
         </button>
-        
-        <!-- DND -->
-        <button @click="toggleDnd" :class="isDndActive ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
+
+        <button @click="toggleDnd" :class="isDnd ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
           v-tooltip.top="'No molestar'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <BellOff :size="20" />
-          <span class="text-xs">{{ isDndActive ? 'DND ON' : 'DND' }}</span>
+          <span class="text-xs">{{ isDnd ? 'DND ON' : 'DND' }}</span>
         </button>
 
-        <!-- Voicemail -->
-        <button @click="checkVoicemail" 
-          v-tooltip.top="'Revisar mensajes de voz'"
+        <button @click="checkVoicemail" v-tooltip.top="'Revisar mensajes de voz'"
           class="control-button bg-teal-500 hover:bg-teal-600 text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <Voicemail :size="20" />
-          <span class="text-xs">VoiceMail: {{ voicemailCount }}/0</span>
+          <span class="text-xs">VoiceMail: {{ phoneStore.voicemail.new }}/{{ phoneStore.voicemail.old }}</span>
         </button>
 
-        <!-- Audio/Mic -->
-        <button @click="toggleAudioMic" :class="isAudioMicActive ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'"
-          v-tooltip.top="'Configuración de audio y micrófono'"
-          class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
-          <component :is="isAudioMicActive ? 'Mic' : 'MicOff'" :size="20" />
-          <span class="text-xs">{{ isAudioMicActive ? 'Audio ON' : 'Audio/Mic' }}</span>
-        </button>
+        <div class="relative">
+          <button @click="toggleDialOptions"
+            :class="showAdvancedDialOptions ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'"
+            v-tooltip.top="'Configurar micrófono'"
+            class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 w-full">
+            <Mic :size="20" />
+            <span class="text-xs">{{ showAdvancedDialOptions ? 'MIC ON' : 'MIC' }}</span>
+          </button>
+
+          <div v-show="showAdvancedDialOptions"
+            class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50">
+
+            <div>
+              <label for="micSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Seleccionar micrófono:
+              </label>
+              <select id="micSelect" v-model="selectedMicId"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="" disabled>Seleccionar dispositivo...</option>
+                <option v-for="device in audioInputDevices" :key="device.deviceId" :value="device.deviceId">
+                  {{ device.label || `Micrófono ${device.deviceId.slice(0, 8)}...` }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="showAdvancedDialOptions" @click="showAdvancedDialOptions = false" class="fixed inset-0 z-40">
+        </div>
       </div>
 
-      <!-- Controles de llamada en curso -->
       <div v-if="isCallActive" class="grid grid-cols-2 gap-3 mb-6">
         <button @click="toggleMute" :class="isMuted ? 'bg-red-600' : 'bg-orange-500 hover:bg-orange-600'"
           v-tooltip.top="isMuted ? 'Activar timbre' : 'Silenciar timbre'"
@@ -175,27 +189,18 @@
           <component :is="isMuted ? 'VolumeX' : 'Volume2'" :size="20" />
           <span class="text-xs">{{ isMuted ? 'UNMUTE' : 'MUTE' }}</span>
         </button>
-        
-        <button @click="toggleAutoAnswer" :class="isAutoAnswerActive ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
-          v-tooltip.top="'Respuesta automática'"
-          class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
-          <component :is="isAutoAnswerActive ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
-          <span class="text-xs">{{ isAutoAnswerActive ? 'AUTO ON' : 'AUTO ANS' }}</span>
-        </button>
       </div>
 
-      <!-- Acciones adicionales -->
       <div class="grid grid-cols-1 gap-3">
-        <!-- Transfer -->
-        <button @click="transferCall" :disabled="!isCallActive"
-          v-tooltip.top="'Transferir llamada'"
-          class="control-button bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
-          <ArrowRightLeft :size="20" />
-          <span class="text-sm">Transfer</span>
+        <button @click="toggleAutoAnswer"
+          :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
+          v-tooltip.top="'Respuesta automática'"
+          class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
+          <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
+          <span class="text-xs">{{ isAutoAnswer ? 'AUTO ON' : 'AUTO ANS' }}</span>
         </button>
 
-        <!-- Hold -->
-        <button @click="toggleHold" :disabled="!isCallActive" 
+        <button @click="toggleHold" :disabled="!isCallActive"
           :class="isOnHold ? 'bg-yellow-600' : 'bg-yellow-500 hover:bg-yellow-600'"
           v-tooltip.top="isOnHold ? 'Quitar de espera' : 'Poner en espera'"
           class="control-button disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
@@ -205,11 +210,10 @@
       </div>
     </div>
 
-    <!-- Panel dinámico - 50% del espacio restante -->
-    <div class="dynamic-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+    <div
+      class="dynamic-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Información</h3>
-      
-      <!-- Estado de conexión detallado -->
+
       <div class="mb-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Estado de Conexión</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -236,7 +240,6 @@
         </div>
       </div>
 
-      <!-- Configuración SIP -->
       <div class="mb-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Configuración SIP</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -263,7 +266,6 @@
         </div>
       </div>
 
-      <!-- Logs de actividad -->
       <div>
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Actividad Reciente</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 max-h-60 overflow-y-auto">
@@ -283,18 +285,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
 import { useSipStore } from '@/components/login/SipStore'
-// Importar iconos de Lucide Vue
-import { 
-  RotateCcw, 
-  BellOff, 
-  Voicemail, 
-  ArrowRightLeft, 
+import {
+  RotateCcw,
+  BellOff,
+  Voicemail,
+  Mic,
 } from 'lucide-vue-next'
 
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 
-// Estado local del teléfono
 const displayNumber = ref('')
 const isCallActive = ref(false)
 const currentCallNumber = ref('')
@@ -302,22 +302,21 @@ const callStartTime = ref<Date | null>(null)
 const callDuration = ref('00:00')
 const callTimer = ref<number | null>(null)
 
-// Variables para el botón de borrado unificado
 const isDeleting = ref(false)
 const deleteTimer = ref<number | null>(null)
 const deleteStartTime = ref<number | null>(null)
 const HOLD_DURATION = 500
 
-// Estado de los controles
-const isDndActive = ref(false)
+const isDnd = ref(false)
 const isMuted = ref(false)
-const isAutoAnswerActive = ref(false)
-const isAudioMicActive = ref(false)
+const isAutoAnswer = ref(false)
 const isOnHold = ref(false)
-const voicemailCount = ref(0)
 const lastDialedNumber = ref('')
 
-// Logs de actividad
+const showAdvancedDialOptions = ref(false)
+const audioInputDevices = ref<MediaDeviceInfo[]>([])
+const selectedMicId = ref<string | null>(null)
+
 const activityLogs = ref([
   { id: 1, timestamp: new Date(), message: 'SIP inicializado' },
   { id: 2, timestamp: new Date(Date.now() - 60000), message: 'Conectando al servidor' },
@@ -339,7 +338,6 @@ const dialSounds: Record<'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '
   '#': new Audio(new URL('@/assets/wav/hash.wav', import.meta.url).href),
 }
 
-// Configuración del teclado
 const dialpadKeys = [
   { value: '1', letters: '' },
   { value: '2', letters: 'ABC' },
@@ -355,14 +353,12 @@ const dialpadKeys = [
   { value: '#', letters: '' },
 ]
 
-// Historial de llamadas
 const recentCalls = ref([
   { id: 1, number: '1234567890', type: 'outgoing', timestamp: new Date(Date.now() - 300000) },
   { id: 2, number: '0987654321', type: 'incoming', timestamp: new Date(Date.now() - 600000) },
   { id: 3, number: '1122334455', type: 'outgoing', timestamp: new Date(Date.now() - 900000) },
 ])
 
-// Computed properties
 const connectionStatus = computed(() => {
   return phoneStore.isConnected ? 'Conectado' : 'Desconectado'
 })
@@ -387,48 +383,48 @@ const callButtonClass = computed(() => {
     ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
     : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
 })
- 
+
 const handleKeyDown = (event: KeyboardEvent) => {
   if (isCallActive.value) return
-  
+
   const key = event.key
-  
+
   if (/^[0-9]$/.test(key)) {
     event.preventDefault()
     addDigit(key)
     return
   }
-  
+
   if (key === '*') {
     event.preventDefault()
     addDigit('*')
     return
   }
-  
+
   if (key === '#') {
     event.preventDefault()
     addDigit('#')
     return
   }
-  
+
   if (key === 'Enter' && canCall.value) {
     event.preventDefault()
     handleCall()
     return
   }
-  
+
   if (key === 'Escape' && isCallActive.value) {
     event.preventDefault()
     handleCall()
     return
   }
-  
+
   if (key === 'Backspace' && displayNumber.value.length > 0) {
     event.preventDefault()
     clearLastDigit()
     return
   }
-  
+
   if (key === 'Delete' && displayNumber.value.length > 0) {
     event.preventDefault()
     clearDisplay()
@@ -436,7 +432,6 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 }
 
-// Métodos del teléfono
 const addDigit = (digit: string) => {
   const sound = dialSounds[digit as keyof typeof dialSounds]
   if (sound) {
@@ -451,10 +446,10 @@ const addDigit = (digit: string) => {
 const startDelete = (event: MouseEvent | TouchEvent) => {
   event.preventDefault()
   if (displayNumber.value.length === 0 || isCallActive.value) return
-  
+
   isDeleting.value = true
   deleteStartTime.value = Date.now()
-  
+
   deleteTimer.value = window.setTimeout(() => {
     clearDisplay()
     isDeleting.value = false
@@ -464,18 +459,18 @@ const startDelete = (event: MouseEvent | TouchEvent) => {
 const endDelete = (event: MouseEvent | TouchEvent) => {
   event.preventDefault()
   if (!isDeleting.value) return
-  
+
   isDeleting.value = false
-  
+
   if (deleteTimer.value) {
     clearTimeout(deleteTimer.value)
     deleteTimer.value = null
-    
+
     if (deleteStartTime.value && (Date.now() - deleteStartTime.value) < HOLD_DURATION) {
       clearLastDigit()
     }
   }
-  
+
   deleteStartTime.value = null
 }
 
@@ -576,41 +571,28 @@ const redial = () => {
 }
 
 const toggleDnd = () => {
-  isDndActive.value = !isDndActive.value
-  addActivityLog(`DND ${isDndActive.value ? 'activado' : 'desactivado'}`)
+  isDnd.value = !isDnd.value
+  addActivityLog(`DND ${isDnd.value ? 'activado' : 'desactivado'}`)
 }
 
 const checkVoicemail = () => {
   addActivityLog('Verificando mensajes de voz')
 }
 
-const toggleMute = () => {
-  isMuted.value = !isMuted.value
-  addActivityLog(`Micrófono ${isMuted.value ? 'silenciado' : 'activado'}`)
-}
+// const toggleMute = () => {
+//   isMuted.value = !isMuted.value
+//   addActivityLog(`Micrófono ${isMuted.value ? 'silenciado' : 'activado'}`)
+// }
 
 const toggleAutoAnswer = () => {
-  isAutoAnswerActive.value = !isAutoAnswerActive.value
-  addActivityLog(`AutoAnswer ${isAutoAnswerActive.value ? 'activado' : 'desactivado'}`)
-}
-
-const toggleAudioMic = () => {
-  isAudioMicActive.value = !isAudioMicActive.value
-  addActivityLog(`Audio/Mic ${isAudioMicActive.value ? 'activado' : 'desactivado'}`)
-}
-
-const transferCall = () => {
-  if (isCallActive.value) {
-    addActivityLog('Iniciando transferencia de llamada')
-    // Implementar lógica de transferencia
-  }
+  isAutoAnswer.value = !isAutoAnswer.value
+  addActivityLog(`AutoAnswer ${isAutoAnswer.value ? 'activado' : 'desactivado'}`)
 }
 
 const toggleHold = () => {
   if (isCallActive.value) {
     isOnHold.value = !isOnHold.value
     addActivityLog(`Llamada ${isOnHold.value ? 'en espera' : 'reanudada'}`)
-    // Implementar lógica de hold/unhold
   }
 }
 
@@ -620,10 +602,34 @@ const addActivityLog = (message: string) => {
     timestamp: new Date(),
     message
   })
-  
-  // Mantener solo los últimos 50 logs
+
   if (activityLogs.value.length > 50) {
     activityLogs.value = activityLogs.value.slice(0, 50)
+  }
+}
+
+const toggleDialOptions = async () => {
+  if (showAdvancedDialOptions.value) {
+    showAdvancedDialOptions.value = false
+  } else {
+    showAdvancedDialOptions.value = true
+    await loadAudioInputDevices()
+  }
+}
+
+const toggleMute = async () => {
+  await phoneStore.toggleMute()
+  addActivityLog(`Micrófono ${phoneStore.isMuted ? 'silenciado' : 'activado'}`)
+}
+
+const loadAudioInputDevices = async () => {
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true })
+
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    audioInputDevices.value = devices.filter(device => device.kind === 'audioinput')
+  } catch (err) {
+    console.error('Error accediendo a dispositivos de audio:', err)
   }
 }
 
@@ -650,9 +656,12 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -662,19 +671,19 @@ onUnmounted(() => {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Responsive design */
 @media (max-width: 1024px) {
   .softphone-container {
     flex-direction: column;
   }
-  
+
   .phone-dialer {
     width: 100%;
     max-width: 400px;
     margin: 0 auto;
   }
-  
-  .control-panel, .dynamic-panel {
+
+  .control-panel,
+  .dynamic-panel {
     min-width: auto;
   }
 }
@@ -684,8 +693,9 @@ onUnmounted(() => {
     padding: 2px;
     gap: 2px;
   }
-  
-  .control-panel, .dynamic-panel {
+
+  .control-panel,
+  .dynamic-panel {
     padding: 4px;
   }
 }
