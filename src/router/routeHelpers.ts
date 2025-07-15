@@ -117,7 +117,7 @@ export const createProtectedRoute = (
   createRoute(path, component, {
     name: options.name,
     layout: options.layout || 'dashboard',
-    meta: createRouteMeta({
+  meta: createRouteMeta({
       title: options.title,
       requiresAuth: true, // All protected routes require auth
       requiresExtension: options.requiresExtension, // Extension requirement implies auth requirement
