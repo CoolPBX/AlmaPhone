@@ -15,60 +15,38 @@
         </div> -->
         <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
           <FloatLabel>
-            <InputText
-              id="username"
-              v-model="form.username"
-              type="email"
-              :invalid="!!(authStore.error && !form.username)"
-              :disabled="authStore.isLoading"
-              class="w-full"
-            />
+            <InputText id="username" v-model="form.username" type="email"
+              :invalid="!!(authStore.error && !form.username)" :disabled="authStore.isLoading" class="w-full" />
             <label for="username">{{ t('auth.email') }}</label>
           </FloatLabel>
 
           <FloatLabel class="mt-3">
-            <Password
-              id="password"
-              v-model="form.password"
-              :feedback="false"
-              toggleMask
-              :invalid="!!(authStore.error && !form.password)"
-              :disabled="authStore.isLoading"
-              class="w-full"
-              inputClass="w-full"
-            />
+            <Password id="password" v-model="form.password" :feedback="false" toggleMask
+              :invalid="!!(authStore.error && !form.password)" :disabled="authStore.isLoading" class="w-full"
+              inputClass="w-full" />
             <label for="password">{{ t('auth.password') }}</label>
           </FloatLabel>
 
-          <Message
-            v-if="authStore.error"
-            severity="error"
-            :closable="true"
-            @close="authStore.clearError"
-          >
+          <Message v-if="authStore.error" severity="error" :closable="true" @close="authStore.clearError">
             {{ authStore.error }}
           </Message>
 
-          <Button
-            type="submit"
-            :loading="authStore.isLoading"
-            :disabled="!isFormValid"
-            :label="t('auth.signIn')"
-            loadingIcon="pi pi-spin pi-spinner"
-            class="w-full"
-            size="large"
-          />
+          <Button type="submit" :loading="authStore.isLoading" :disabled="!isFormValid" :label="t('auth.signIn')"
+            loadingIcon="pi pi-spin pi-spinner" class="w-full" size="large" />
         </form>
+        <div class="flex justify-center mt-3">
+          <Button type="button" label="Opciones Avanzadas" severity="secondary" size="small" text
+            @click="showAdvancedOptions = true" />
+        </div>
+
       </template>
     </Card>
 
     <!-- Extension Selector Modal -->
-    <ExtensionSelector
-      v-if="showExtensionModal"
-      @extension-selected="onExtensionSelected"
-      @logout="onLogout"
-    />
+    <ExtensionSelector v-if="showExtensionModal" @extension-selected="onExtensionSelected" @logout="onLogout" />
   </div>
+  <AdvancedOptionsModal :isOpen="showAdvancedOptions" @close="showAdvancedOptions = false"
+    @saved="onAdvancedOptionsSaved" />
 </template>
 
 <script setup lang="ts">
@@ -86,6 +64,7 @@ import Avatar from 'primevue/avatar'
 import ExtensionSelector from '@/components/extension-selector/ExtensionSelector.vue'
 import { useSipStore } from './SipStore'
 import { useExtensionStore } from '../extension-selector/ExtensionStore'
+import AdvancedOptionsModal from './AdvancedOptionsModal.vue'
 // import LanguageSwitcher from '@/core/presentation/components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
@@ -93,6 +72,7 @@ const authStore = useAuthStore()
 const extensionStore = useExtensionStore()
 const sipStore = useSipStore()
 const router = useRouter()
+const showAdvancedOptions = ref(false)
 
 const form = ref({
   username: '',
@@ -109,6 +89,11 @@ const isFormValid = computed(() => {
   )
 })
 
+const onAdvancedOptionsSaved = () => {
+  // Opcional: mostrar mensaje de confirmación
+  console.log('Configuración avanzada guardada')
+}
+
 const handleLogin = async () => {
   const success = await authStore.login({
     user_email: form.value.username,
@@ -123,11 +108,9 @@ const handleLogin = async () => {
 const onExtensionSelected = () => {
   showExtensionModal.value = false
   sipStore.initializeSip({
-    server: 'wss://hornblower.doesnotexist.com:7443',
     username: authStore.user?.username || '',
     password: extensionStore.selectedExtension?.password || '',
-    domain: 'hornblower.doesnotexist.com',
-    displayName:  'LDLQ2',
+    displayName: 'LDLQ2',
   })
   router.push('/phone')
 }

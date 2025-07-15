@@ -19,7 +19,7 @@
 
       <div class="mb-6">
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
-          <input v-model="displayNumber" type="text" readonly placeholder="Ingrese un número"
+          <input v-model="displayNumber" type="text" readonly :placeholder="$t('phoneView.enternumber')"
             class="w-full text-center text-2xl font-mono bg-transparent border-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-400" />
         </div>
       </div>
@@ -78,7 +78,7 @@
             <div class="flex items-center space-x-3">
               <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
               <span class="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Llamando a {{ currentCallNumber }}
+                {{ t('phoneView.callTo', { number: currentCallNumber }) }}
               </span>
             </div>
             <span class="text-sm text-blue-700 dark:text-blue-300">
@@ -90,7 +90,7 @@
 
       <div class="mt-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
-          Llamadas Recientes
+          {{ t('phoneView.recentCalls') }}
         </h4>
         <div class="space-y-2 max-h-40 overflow-y-auto">
           <div v-for="call in recentCalls" :key="call.id" @click="selectRecentCall(call.number)"
@@ -115,9 +115,8 @@
 
     <div
       class="control-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Controles</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">{{ t('phoneView.controlPanel') }}</h3>
 
-      <!-- Estado de registro -->
       <div class="mb-6">
         <div class="bg-red-50 dark:bg-red-900 rounded-lg p-4 border border-red-200 dark:border-red-700">
           <div class="flex items-center justify-between">
@@ -135,14 +134,14 @@
         <button @click="redial" :disabled="!lastDialedNumber" v-tooltip.top="'Repetir última llamada'"
           class="control-button bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex flex-col items-center space-y-1">
           <RotateCcw :size="20" />
-          <span class="text-xs">ReDial</span>
+          <span class="text-xs">{{ t('phoneView.redial') }}</span>
         </button>
 
         <button @click="toggleDnd" :class="isDnd ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
           v-tooltip.top="'No molestar'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <BellOff :size="20" />
-          <span class="text-xs">{{ isDnd ? 'DND ON' : 'DND' }}</span>
+          <span class="text-xs">{{ t(isDnd ? 'phoneView.dndOn' : 'phoneView.dnd') }}</span>
         </button>
 
         <button @click="checkVoicemail" v-tooltip.top="'Revisar mensajes de voz'"
@@ -157,7 +156,7 @@
             v-tooltip.top="'Configurar micrófono'"
             class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 w-full">
             <Mic :size="20" />
-            <span class="text-xs">{{ showAdvancedDialOptions ? 'MIC ON' : 'MIC' }}</span>
+            <span class="text-xs">{{ t(showAdvancedDialOptions ? 'phoneView.micOn' : 'phoneView.mic') }}</span>
           </button>
 
           <div v-show="showAdvancedDialOptions"
@@ -165,11 +164,11 @@
 
             <div>
               <label for="micSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Seleccionar micrófono:
+                {{ t('phoneView.selectMic') }}
               </label>
               <select id="micSelect" v-model="selectedMicId"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                <option value="" disabled>Seleccionar dispositivo...</option>
+                <option value="" disabled>{{ t('phoneView.selectDevice') }}</option>
                 <option v-for="device in audioInputDevices" :key="device.deviceId" :value="device.deviceId">
                   {{ device.label || `Micrófono ${device.deviceId.slice(0, 8)}...` }}
                 </option>
@@ -197,15 +196,7 @@
           v-tooltip.top="'Respuesta automática'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
-          <span class="text-xs">{{ isAutoAnswer ? 'AUTO ON' : 'AUTO ANS' }}</span>
-        </button>
-
-        <button @click="toggleHold" :disabled="!isCallActive"
-          :class="isOnHold ? 'bg-yellow-600' : 'bg-yellow-500 hover:bg-yellow-600'"
-          v-tooltip.top="isOnHold ? 'Quitar de espera' : 'Poner en espera'"
-          class="control-button disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
-          <component :is="isOnHold ? 'Play' : 'Pause'" :size="20" />
-          <span class="text-sm">{{ isOnHold ? 'UNHOLD' : 'HOLD' }}</span>
+          <span class="text-xs">{{ t(isAutoAnswer ? 'phoneView.autoAnswerOn' : 'phoneView.autoAnswer') }}</span>
         </button>
       </div>
     </div>
@@ -215,7 +206,7 @@
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Información</h3>
 
       <div class="mb-6">
-        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Estado de Conexión</h4>
+        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ t('phoneView.recentCalls') }}</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <div class="space-y-2">
             <div class="flex justify-between">
@@ -241,23 +232,23 @@
       </div>
 
       <div class="mb-6">
-        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Configuración SIP</h4>
+        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ t('phoneView.sipConfig') }}</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <div class="space-y-2">
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Servidor:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.server') }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.server }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Usuario:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.user') }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.username }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Dominio:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.domain') }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.domain }}
               </span>
@@ -267,7 +258,7 @@
       </div>
 
       <div>
-        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Actividad Reciente</h4>
+        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ t('phoneView.controls') }}</h4>
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 max-h-60 overflow-y-auto">
           <div class="space-y-2">
             <div v-for="log in activityLogs" :key="log.id" class="text-xs">
@@ -291,6 +282,9 @@ import {
   Voicemail,
   Mic,
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
@@ -310,7 +304,6 @@ const HOLD_DURATION = 500
 const isDnd = ref(false)
 const isMuted = ref(false)
 const isAutoAnswer = ref(false)
-const isOnHold = ref(false)
 const lastDialedNumber = ref('')
 
 const showAdvancedDialOptions = ref(false)
@@ -587,13 +580,6 @@ const checkVoicemail = () => {
 const toggleAutoAnswer = () => {
   isAutoAnswer.value = !isAutoAnswer.value
   addActivityLog(`AutoAnswer ${isAutoAnswer.value ? 'activado' : 'desactivado'}`)
-}
-
-const toggleHold = () => {
-  if (isCallActive.value) {
-    isOnHold.value = !isOnHold.value
-    addActivityLog(`Llamada ${isOnHold.value ? 'en espera' : 'reanudada'}`)
-  }
 }
 
 const addActivityLog = (message: string) => {
