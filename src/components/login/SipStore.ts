@@ -48,15 +48,14 @@ export const useSipStore = defineStore('sip', () => {
       }
       callState.value = 'ringing'
 
-      if(isAutoAnswer.value) {
-        console.log('Auto-answer enabled, answering call');
+      if (isAutoAnswer.value) {
+        console.log('Auto-answer enabled, answering call')
         try {
           await simpleUser.value?.answer()
         } catch (err) {
           console.error('Error auto-answering call:', err)
           error.value = err instanceof Error ? err.message : 'Error auto-answering call'
         }
-        
       }
     },
     onCallAnswered: (): void => {
@@ -103,16 +102,24 @@ export const useSipStore = defineStore('sip', () => {
 
   const initializeSip = async (
     config: {
-      server: string
+      server?: string
       username: string
       password: string
-      domain: string
+      domain?: string
       displayName: string
     },
     remoteAudio?: HTMLAudioElement,
   ): Promise<boolean> => {
     try {
-      sipConfig.value = { ...sipConfig.value, ...config }
+      const finalConfig = {
+        server: config.server || sipConfig.value.server,
+        username: config.username,
+        password: config.password,
+        domain: config.domain || sipConfig.value.domain,
+        displayName: config.displayName,
+      }
+
+      sipConfig.value = { ...sipConfig.value, ...finalConfig }
 
       if (remoteAudio) {
         audioElement.value = remoteAudio
@@ -152,7 +159,6 @@ export const useSipStore = defineStore('sip', () => {
       simpleUser.value = new SimpleUser(webSocketServer, simpleUserOptions)
 
       await simpleUser.value.connect()
-
       await simpleUser.value.register()
 
       return true
@@ -309,6 +315,15 @@ export const useSipStore = defineStore('sip', () => {
     audioElement.value = element
   }
 
+  const updateAdvancedConfig = (config: { domain?: string; server?: string }): void => {
+    if (config.domain) {
+      sipConfig.value.domain = config.domain
+    }
+    if (config.server) {
+      sipConfig.value.server = config.server
+    }
+  }
+
   return {
     // State
     simpleUser,
@@ -338,6 +353,7 @@ export const useSipStore = defineStore('sip', () => {
     toggleHold,
     sendDTMF,
     disconnect,
+    updateAdvancedConfig,
     setAudioElement,
     reconnect,
   }
