@@ -324,6 +324,27 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
+  const reinitializeWithExtension = async (extension: {
+    server?: string
+    username: string
+    password: string
+    displayName: string
+    domain?: string
+  }): Promise<boolean> => {
+    try {
+      if (simpleUser.value && isConnected.value) {
+        await disconnect()
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      return await initializeSip(extension, audioElement.value || undefined)
+    } catch (err) {
+      console.error('Error reinitializando SIP:', err)
+      error.value = err instanceof Error ? err.message : 'Error reinitializando SIP'
+      return false
+    }
+  }
+
   return {
     // State
     simpleUser,
@@ -356,5 +377,6 @@ export const useSipStore = defineStore('sip', () => {
     updateAdvancedConfig,
     setAudioElement,
     reconnect,
+    reinitializeWithExtension
   }
 })

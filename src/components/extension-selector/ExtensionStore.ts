@@ -5,6 +5,7 @@ import type { ExtensionItemDto, ExtensionListResponseDto } from './domain/schema
 import { GetExtensionsUseCase } from './domain/use-cases/extension/GetExtensionsUseCase'
 import { useAuthStore } from '../login/AuthStore'
 import type { ApiErrorDto } from '../login/domain/schemas/AuthSchemas'
+import { useSipStore } from '../login/SipStore'
 
 export const useExtensionStore = defineStore(
   'extension',
@@ -93,6 +94,29 @@ export const useExtensionStore = defineStore(
       error.value = null
     }
 
+    const changeExtension = async (extension: ExtensionItemDto): Promise<boolean> => {
+      selectExtension(extension)
+
+      const sipStore = useSipStore()
+      if (sipStore.isConnected) {
+        await sipStore.disconnect()
+      }
+
+      const success = await sipStore.initializeSip({
+        username: extension.extension,
+        password: extension.password,
+        displayName: 'LDLQ2',
+      })
+
+      if (success) {
+        localStorage.setItem('selected_extension', JSON.stringify(extension))
+        return true
+      } else {
+        error.value = 'Failed to change extension'
+        return false
+      }
+    }
+
     return {
       extensions: readonly(extensions),
       selectedExtension: readonly(selectedExtension),
@@ -108,6 +132,7 @@ export const useExtensionStore = defineStore(
       restoreSelectedExtension,
       clearExtensions,
       clearError,
+      changeExtension
     }
   },
   {

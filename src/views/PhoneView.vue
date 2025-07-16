@@ -19,7 +19,7 @@
 
       <div class="mb-6">
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
-          <input v-model="displayNumber" type="text" readonly :placeholder="$t('phoneView.enternumber')"
+          <input v-model="displayNumber" type="text" readonly :placeholder="$t('phoneView.enternumber')" ref="numberInputRef"
             class="w-full text-center text-2xl font-mono bg-transparent border-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-400" />
         </div>
       </div>
@@ -39,7 +39,7 @@
       <div class="flex justify-center space-x-3 mb-6">
         <button @click="handleCall" :disabled="!canCall" :class="callButtonClass"
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg v-if="!isCallActive" class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="!isCallActive" class="w-8 h-8 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
@@ -191,8 +191,7 @@
       </div>
 
       <div class="grid grid-cols-1 gap-3">
-        <button @click="toggleAutoAnswer"
-          :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
+        <button @click="toggleAutoAnswer" :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
           v-tooltip.top="'Respuesta automática'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
@@ -273,7 +272,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
 import { useSipStore } from '@/components/login/SipStore'
 import {
@@ -309,6 +308,7 @@ const lastDialedNumber = ref('')
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
 const selectedMicId = ref<string | null>(null)
+const numberInputRef = ref<HTMLInputElement | null>(null)
 
 const activityLogs = ref([
   { id: 1, timestamp: new Date(), message: 'SIP inicializado' },
@@ -431,9 +431,8 @@ const addDigit = (digit: string) => {
     sound.currentTime = 0
     sound.play()
   }
-  if (displayNumber.value.length < 40) {
-    displayNumber.value += digit
-  }
+
+  displayNumber.value += digit
 }
 
 const startDelete = (event: MouseEvent | TouchEvent) => {
@@ -555,7 +554,6 @@ const formatTime = (date: Date) => {
   })
 }
 
-// Métodos de control
 const redial = () => {
   if (lastDialedNumber.value && !isCallActive.value) {
     displayNumber.value = lastDialedNumber.value
@@ -571,11 +569,6 @@ const toggleDnd = () => {
 const checkVoicemail = () => {
   addActivityLog('Verificando mensajes de voz')
 }
-
-// const toggleMute = () => {
-//   isMuted.value = !isMuted.value
-//   addActivityLog(`Micrófono ${isMuted.value ? 'silenciado' : 'activado'}`)
-// }
 
 const toggleAutoAnswer = () => {
   isAutoAnswer.value = !isAutoAnswer.value
@@ -629,6 +622,14 @@ onUnmounted(() => {
     clearTimeout(deleteTimer.value)
   }
   window.removeEventListener('keydown', handleKeyDown)
+})
+
+watch(displayNumber, () => {
+  nextTick(() => {
+    if (numberInputRef.value) {
+      numberInputRef.value.scrollLeft = numberInputRef.value.scrollWidth
+    }
+  })
 })
 </script>
 

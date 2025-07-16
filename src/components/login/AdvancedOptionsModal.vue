@@ -1,7 +1,7 @@
 <template>
   <BaseModal
     :isOpen="isOpen"
-    title="Opciones Avanzadas"
+    :title="t('auth.advacedOptions')"
     size="lg"
     @close="$emit('close')"
   >
@@ -75,6 +75,7 @@ import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import BaseModal from '@/core/presentation/components/BaseModal.vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   isOpen: boolean
@@ -90,6 +91,7 @@ const emit = defineEmits<Emits>()
 
 const sipStore = useSipStore()
 const error = ref<string | null>(null)
+const { t } = useI18n()
 
 
 
@@ -107,7 +109,6 @@ const isValidDomain = (domain: string): boolean => {
 
 const isValidHost = (host: string): boolean => {
   if (!host) return false
-  // Acepta tanto IP como hostname
   const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
   const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?)*$/
   return ipRegex.test(host) || hostnameRegex.test(host)
@@ -154,7 +155,6 @@ const handleCancel = () => {
   emit('close')
 }
 
-// Resetear el formulario cuando se abre el modal
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
     form.value = {

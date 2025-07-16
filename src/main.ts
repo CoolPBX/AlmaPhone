@@ -8,6 +8,8 @@ import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/components/login/AuthStore'
 import i18n from './i18n'
+import ToastService from 'primevue/toastservice'
+import Toast from 'primevue/toast'
 
 import 'primeicons/primeicons.css'
 import { setupDependencyInjection } from './core/di'
@@ -17,6 +19,8 @@ setupDependencyInjection(app)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
+app.use(ToastService)
+app.component('AppToast', Toast)
 
 useAuthStore()
 

@@ -33,6 +33,7 @@ export default {
     loginRequired: 'Login required',
     sessionExpired: 'Session expired',
     connectedAs: 'Connected as',
+    advacedOptions: 'Advanced Options',
   },
 
   // Extension Selector
