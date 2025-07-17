@@ -27,10 +27,10 @@ export const useSipStore = defineStore('sip', () => {
 
   const sipConfig = ref({
     server: 'wss://hornblower.doesntexist.org:7443',
-    username: 'LDLQ2',
+    username: '',
     password: '',
     domain: 'hornblower.doesntexist.org',
-    displayName: '',
+    displayName: 'LDLQ2',
   })
 
   const createSimpleUserDelegate = (): SimpleUserDelegate => ({

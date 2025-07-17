@@ -624,7 +624,7 @@ onMounted(async () => {
 
   window.addEventListener('keydown', handleKeyDown)
 
-  if (sipStore.sipConfig.username && sipStore.sipConfig.password && sipStore.sipConfig.server) {
+  if (sipStore.sipConfig.username && sipStore.sipConfig.password && sipStore.sipConfig.server && !sipStore.isConnected) {
     await sipStore.initializeSip(sipStore.sipConfig)
   }
 })

@@ -1,8 +1,5 @@
 # Editors
-.vscode/*
-!.vscode/extensions.json
-!.vscode/launch.json
-!.vscode/setting.json
+.vscode/
 
 # Logs
 logs
@@ -45,3 +42,6 @@ coverage
 # OS files
 .DS_Store
 Thumbs.db
+
+!.vscode/settings.json
+!.vscode/launch.json
