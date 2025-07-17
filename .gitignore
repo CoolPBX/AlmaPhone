@@ -35,7 +35,6 @@ coverage
 .env.*.local
 
 # IDE files
-.vscode/
 .idea/
 
 # OS files
