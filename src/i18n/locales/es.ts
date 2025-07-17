@@ -80,7 +80,7 @@ export default {
 
   phoneView: {
     recentCalls: 'Llamadas Recientes',
-    callTo: 'Llamando a {{number}}',
+    callTo: 'Llamando a: ',
     redial: 'Repetir',
     dnd: 'No Molestar',
     dndOn: 'DND ACTIVADO',

@@ -90,7 +90,6 @@ const isFormValid = computed(() => {
 })
 
 const onAdvancedOptionsSaved = () => {
-  // Opcional: mostrar mensaje de confirmación
   console.log('Configuración avanzada guardada')
 }
 
@@ -112,6 +111,8 @@ const onExtensionSelected = () => {
     password: extensionStore.selectedExtension?.password || '',
     displayName: 'LDLQ2',
   })
+  console.log('Extension selected:', extensionStore.selectedExtension?.password);
+  
   router.push('/phone')
 }
 

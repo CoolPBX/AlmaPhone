@@ -26,10 +26,10 @@ export const useSipStore = defineStore('sip', () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: 'wss://hornblower.doesnotexist.com:7443',
+    server: 'wss://hornblower.doesntexist.org:7443',
     username: 'LDLQ2',
     password: '',
-    domain: 'hornblower.doesnotexist.com',
+    domain: 'hornblower.doesntexist.org',
     displayName: '',
   })
 
@@ -160,6 +160,7 @@ export const useSipStore = defineStore('sip', () => {
 
       await simpleUser.value.connect()
       await simpleUser.value.register()
+      saveSipConfigToStorage()
 
       return true
     } catch (err) {
@@ -345,6 +346,18 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
+  const loadSipConfigFromStorage = (): void => {
+    const saved = localStorage.getItem('sipConfig')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      sipConfig.value = { ...sipConfig.value, ...parsed }
+    }
+  }
+
+  const saveSipConfigToStorage = (): void => {
+    localStorage.setItem('sipConfig', JSON.stringify(sipConfig.value))
+  }
+
   return {
     // State
     simpleUser,
@@ -377,6 +390,8 @@ export const useSipStore = defineStore('sip', () => {
     updateAdvancedConfig,
     setAudioElement,
     reconnect,
-    reinitializeWithExtension
+    reinitializeWithExtension,
+    loadSipConfigFromStorage,
+    saveSipConfigToStorage,
   }
 })

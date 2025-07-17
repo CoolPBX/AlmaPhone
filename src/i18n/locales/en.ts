@@ -69,7 +69,7 @@ export default {
 
     phoneView: {
     recentCalls: 'Recent Calls',
-    callTo: 'Calling {{number}}',
+    callTo: 'Calling',
     redial: 'Redial',
     dnd: 'DND',
     dndOn: 'DND ON',
