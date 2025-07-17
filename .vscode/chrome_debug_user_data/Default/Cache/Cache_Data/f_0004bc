@@ -1,0 +1,960 @@
+import {
+  Ack,
+  AllowedMethods,
+  Bye,
+  ByeUserAgentClient,
+  ByeUserAgentServer,
+  C,
+  Cancel,
+  ClientTransaction,
+  ContentTypeUnsupportedError,
+  Dialog,
+  DigestAuthentication,
+  EmitterImpl,
+  Exception,
+  Grammar,
+  IncomingMessage,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
+  Info,
+  InfoUserAgentClient,
+  InfoUserAgentServer,
+  Invitation,
+  InviteClientTransaction,
+  InviteServerTransaction,
+  InviteUserAgentClient,
+  InviteUserAgentServer,
+  Inviter,
+  LIBRARY_VERSION,
+  Levels,
+  Logger,
+  LoggerFactory,
+  Message,
+  MessageUserAgentClient,
+  MessageUserAgentServer,
+  Messager,
+  NameAddrHeader,
+  NonInviteClientTransaction,
+  NonInviteServerTransaction,
+  Notification,
+  NotifyUserAgentClient,
+  NotifyUserAgentServer,
+  OutgoingRequestMessage,
+  Parameters,
+  Parser,
+  PrackUserAgentClient,
+  PrackUserAgentServer,
+  PublishUserAgentClient,
+  ReInviteUserAgentClient,
+  ReInviteUserAgentServer,
+  ReSubscribeUserAgentClient,
+  ReferUserAgentClient,
+  ReferUserAgentServer,
+  Referral,
+  RegisterUserAgentClient,
+  RegisterUserAgentServer,
+  Registerer,
+  RegistererState,
+  RequestPendingError,
+  SIPExtension,
+  ServerTransaction,
+  Session,
+  SessionDescriptionHandlerError,
+  SessionDialog,
+  SessionState,
+  SessionState2,
+  SessionTerminatedError,
+  SignalingState,
+  StateTransitionError,
+  SubscribeUserAgentClient,
+  SubscribeUserAgentServer,
+  SubscriptionDialog,
+  SubscriptionState,
+  Timers,
+  Transaction,
+  TransactionState,
+  TransactionStateError,
+  TransportError,
+  TransportState,
+  URI,
+  UserAgent,
+  UserAgentClient,
+  UserAgentCore,
+  UserAgentRegisteredOptionTags,
+  UserAgentServer,
+  UserAgentState,
+  constructOutgoingResponse,
+  equivalentURI,
+  fromBodyLegacy,
+  getBody,
+  isBody,
+  web_exports
+} from "/node_modules/.vite/deps/chunk-P5VCKLIT.js?v=4b6b996a";
+import {
+  __export
+} from "/node_modules/.vite/deps/chunk-PZ5AY32C.js?v=4b6b996a";
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/api/publisher-state.js
+var PublisherState;
+(function(PublisherState2) {
+  PublisherState2["Initial"] = "Initial";
+  PublisherState2["Published"] = "Published";
+  PublisherState2["Unpublished"] = "Unpublished";
+  PublisherState2["Terminated"] = "Terminated";
+})(PublisherState = PublisherState || (PublisherState = {}));
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/api/publisher.js
+var Publisher = class {
+  /**
+   * Constructs a new instance of the `Publisher` class.
+   *
+   * @param userAgent - User agent. See {@link UserAgent} for details.
+   * @param targetURI - Request URI identifying the target of the message.
+   * @param eventType - The event type identifying the published document.
+   * @param options - Options bucket. See {@link PublisherOptions} for details.
+   */
+  constructor(userAgent, targetURI, eventType, options = {}) {
+    this.disposed = false;
+    this._state = PublisherState.Initial;
+    this._stateEventEmitter = new EmitterImpl();
+    this.userAgent = userAgent;
+    options.extraHeaders = (options.extraHeaders || []).slice();
+    options.contentType = options.contentType || "text/plain";
+    if (typeof options.expires !== "number" || options.expires % 1 !== 0) {
+      options.expires = 3600;
+    } else {
+      options.expires = Number(options.expires);
+    }
+    if (typeof options.unpublishOnClose !== "boolean") {
+      options.unpublishOnClose = true;
+    }
+    this.target = targetURI;
+    this.event = eventType;
+    this.options = options;
+    this.pubRequestExpires = options.expires;
+    this.logger = userAgent.getLogger("sip.Publisher");
+    const params = options.params || {};
+    const fromURI = params.fromUri ? params.fromUri : userAgent.userAgentCore.configuration.aor;
+    const toURI = params.toUri ? params.toUri : targetURI;
+    let body;
+    if (options.body && options.contentType) {
+      const contentDisposition = "render";
+      const contentType = options.contentType;
+      const content = options.body;
+      body = {
+        contentDisposition,
+        contentType,
+        content
+      };
+    }
+    const extraHeaders = (options.extraHeaders || []).slice();
+    this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(C.PUBLISH, targetURI, fromURI, toURI, params, extraHeaders, body);
+    this.id = this.target.toString() + ":" + this.event;
+    this.userAgent._publishers[this.id] = this;
+  }
+  /**
+   * Destructor.
+   */
+  dispose() {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+    this.logger.log(`Publisher ${this.id} in state ${this.state} is being disposed`);
+    delete this.userAgent._publishers[this.id];
+    if (this.options.unpublishOnClose && this.state === PublisherState.Published) {
+      return this.unpublish();
+    }
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = void 0;
+    }
+    this.pubRequestBody = void 0;
+    this.pubRequestExpires = 0;
+    this.pubRequestEtag = void 0;
+    return Promise.resolve();
+  }
+  /** The publication state. */
+  get state() {
+    return this._state;
+  }
+  /** Emits when the publisher state changes. */
+  get stateChange() {
+    return this._stateEventEmitter;
+  }
+  /**
+   * Publish.
+   * @param content - Body to publish
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  publish(content, options = {}) {
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = void 0;
+    }
+    this.options.body = content;
+    this.pubRequestBody = this.options.body;
+    if (this.pubRequestExpires === 0) {
+      if (this.options.expires === void 0) {
+        throw new Error("Expires undefined.");
+      }
+      this.pubRequestExpires = this.options.expires;
+      this.pubRequestEtag = void 0;
+    }
+    this.sendPublishRequest();
+    return Promise.resolve();
+  }
+  /**
+   * Unpublish.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  unpublish(options = {}) {
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = void 0;
+    }
+    this.pubRequestBody = void 0;
+    this.pubRequestExpires = 0;
+    if (this.pubRequestEtag !== void 0) {
+      this.sendPublishRequest();
+    }
+    return Promise.resolve();
+  }
+  /** @internal */
+  receiveResponse(response) {
+    const statusCode = response.statusCode || 0;
+    switch (true) {
+      case /^1[0-9]{2}$/.test(statusCode.toString()):
+        break;
+      case /^2[0-9]{2}$/.test(statusCode.toString()):
+        if (response.hasHeader("SIP-ETag")) {
+          this.pubRequestEtag = response.getHeader("SIP-ETag");
+        } else {
+          this.logger.warn("SIP-ETag header missing in a 200-class response to PUBLISH");
+        }
+        if (response.hasHeader("Expires")) {
+          const expires = Number(response.getHeader("Expires"));
+          if (typeof expires === "number" && expires >= 0 && expires <= this.pubRequestExpires) {
+            this.pubRequestExpires = expires;
+          } else {
+            this.logger.warn("Bad Expires header in a 200-class response to PUBLISH");
+          }
+        } else {
+          this.logger.warn("Expires header missing in a 200-class response to PUBLISH");
+        }
+        if (this.pubRequestExpires !== 0) {
+          this.publishRefreshTimer = setTimeout(() => this.refreshRequest(), this.pubRequestExpires * 900);
+          if (this._state !== PublisherState.Published) {
+            this.stateTransition(PublisherState.Published);
+          }
+        } else {
+          this.stateTransition(PublisherState.Unpublished);
+        }
+        break;
+      case /^412$/.test(statusCode.toString()):
+        if (this.pubRequestEtag !== void 0 && this.pubRequestExpires !== 0) {
+          this.logger.warn("412 response to PUBLISH, recovering");
+          this.pubRequestEtag = void 0;
+          if (this.options.body === void 0) {
+            throw new Error("Body undefined.");
+          }
+          this.publish(this.options.body);
+        } else {
+          this.logger.warn("412 response to PUBLISH, recovery failed");
+          this.pubRequestExpires = 0;
+          this.stateTransition(PublisherState.Unpublished);
+          this.stateTransition(PublisherState.Terminated);
+        }
+        break;
+      case /^423$/.test(statusCode.toString()):
+        if (this.pubRequestExpires !== 0 && response.hasHeader("Min-Expires")) {
+          const minExpires = Number(response.getHeader("Min-Expires"));
+          if (typeof minExpires === "number" || minExpires > this.pubRequestExpires) {
+            this.logger.warn("423 code in response to PUBLISH, adjusting the Expires value and trying to recover");
+            this.pubRequestExpires = minExpires;
+            if (this.options.body === void 0) {
+              throw new Error("Body undefined.");
+            }
+            this.publish(this.options.body);
+          } else {
+            this.logger.warn("Bad 423 response Min-Expires header received for PUBLISH");
+            this.pubRequestExpires = 0;
+            this.stateTransition(PublisherState.Unpublished);
+            this.stateTransition(PublisherState.Terminated);
+          }
+        } else {
+          this.logger.warn("423 response to PUBLISH, recovery failed");
+          this.pubRequestExpires = 0;
+          this.stateTransition(PublisherState.Unpublished);
+          this.stateTransition(PublisherState.Terminated);
+        }
+        break;
+      default:
+        this.pubRequestExpires = 0;
+        this.stateTransition(PublisherState.Unpublished);
+        this.stateTransition(PublisherState.Terminated);
+        break;
+    }
+    if (this.pubRequestExpires === 0) {
+      if (this.publishRefreshTimer) {
+        clearTimeout(this.publishRefreshTimer);
+        this.publishRefreshTimer = void 0;
+      }
+      this.pubRequestBody = void 0;
+      this.pubRequestEtag = void 0;
+    }
+  }
+  /** @internal */
+  send() {
+    return this.userAgent.userAgentCore.publish(this.request, {
+      onAccept: (response) => this.receiveResponse(response.message),
+      onProgress: (response) => this.receiveResponse(response.message),
+      onRedirect: (response) => this.receiveResponse(response.message),
+      onReject: (response) => this.receiveResponse(response.message),
+      onTrying: (response) => this.receiveResponse(response.message)
+    });
+  }
+  refreshRequest() {
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = void 0;
+    }
+    this.pubRequestBody = void 0;
+    if (this.pubRequestEtag === void 0) {
+      throw new Error("Etag undefined");
+    }
+    if (this.pubRequestExpires === 0) {
+      throw new Error("Expires zero");
+    }
+    this.sendPublishRequest();
+  }
+  sendPublishRequest() {
+    const reqOptions = Object.assign({}, this.options);
+    reqOptions.extraHeaders = (this.options.extraHeaders || []).slice();
+    reqOptions.extraHeaders.push("Event: " + this.event);
+    reqOptions.extraHeaders.push("Expires: " + this.pubRequestExpires);
+    if (this.pubRequestEtag !== void 0) {
+      reqOptions.extraHeaders.push("SIP-If-Match: " + this.pubRequestEtag);
+    }
+    const ruri = this.target;
+    const params = this.options.params || {};
+    let bodyAndContentType;
+    if (this.pubRequestBody !== void 0) {
+      if (this.options.contentType === void 0) {
+        throw new Error("Content type undefined.");
+      }
+      bodyAndContentType = {
+        body: this.pubRequestBody,
+        contentType: this.options.contentType
+      };
+    }
+    let body;
+    if (bodyAndContentType) {
+      body = fromBodyLegacy(bodyAndContentType);
+    }
+    this.request = this.userAgent.userAgentCore.makeOutgoingRequestMessage(C.PUBLISH, ruri, params.fromUri ? params.fromUri : this.userAgent.userAgentCore.configuration.aor, params.toUri ? params.toUri : this.target, params, reqOptions.extraHeaders, body);
+    return this.send();
+  }
+  /**
+   * Transition publication state.
+   */
+  stateTransition(newState) {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+    switch (this._state) {
+      case PublisherState.Initial:
+        if (newState !== PublisherState.Published && newState !== PublisherState.Unpublished && newState !== PublisherState.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Published:
+        if (newState !== PublisherState.Unpublished && newState !== PublisherState.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Unpublished:
+        if (newState !== PublisherState.Published && newState !== PublisherState.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Terminated:
+        invalidTransition();
+        break;
+      default:
+        throw new Error("Unrecognized state.");
+    }
+    this._state = newState;
+    this.logger.log(`Publication transitioned to state ${this._state}`);
+    this._stateEventEmitter.emit(this._state);
+    if (newState === PublisherState.Terminated) {
+      this.dispose();
+    }
+  }
+};
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/api/subscription-state.js
+var SubscriptionState2;
+(function(SubscriptionState3) {
+  SubscriptionState3["Initial"] = "Initial";
+  SubscriptionState3["NotifyWait"] = "NotifyWait";
+  SubscriptionState3["Subscribed"] = "Subscribed";
+  SubscriptionState3["Terminated"] = "Terminated";
+})(SubscriptionState2 = SubscriptionState2 || (SubscriptionState2 = {}));
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/api/subscription.js
+var Subscription = class {
+  /**
+   * Constructor.
+   * @param userAgent - User agent. See {@link UserAgent} for details.
+   * @internal
+   */
+  constructor(userAgent, options = {}) {
+    this._disposed = false;
+    this._state = SubscriptionState2.Initial;
+    this._logger = userAgent.getLogger("sip.Subscription");
+    this._stateEventEmitter = new EmitterImpl();
+    this._userAgent = userAgent;
+    this.delegate = options.delegate;
+  }
+  /**
+   * Destructor.
+   */
+  dispose() {
+    if (this._disposed) {
+      return Promise.resolve();
+    }
+    this._disposed = true;
+    this._stateEventEmitter.removeAllListeners();
+    return Promise.resolve();
+  }
+  /**
+   * The subscribed subscription dialog.
+   */
+  get dialog() {
+    return this._dialog;
+  }
+  /**
+   * True if disposed.
+   * @internal
+   */
+  get disposed() {
+    return this._disposed;
+  }
+  /**
+   * Subscription state. See {@link SubscriptionState} for details.
+   */
+  get state() {
+    return this._state;
+  }
+  /**
+   * Emits when the subscription `state` property changes.
+   */
+  get stateChange() {
+    return this._stateEventEmitter;
+  }
+  /** @internal */
+  stateTransition(newState) {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+    switch (this._state) {
+      case SubscriptionState2.Initial:
+        if (newState !== SubscriptionState2.NotifyWait && newState !== SubscriptionState2.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case SubscriptionState2.NotifyWait:
+        if (newState !== SubscriptionState2.Subscribed && newState !== SubscriptionState2.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case SubscriptionState2.Subscribed:
+        if (newState !== SubscriptionState2.Terminated) {
+          invalidTransition();
+        }
+        break;
+      case SubscriptionState2.Terminated:
+        invalidTransition();
+        break;
+      default:
+        throw new Error("Unrecognized state.");
+    }
+    if (this._state === newState) {
+      return;
+    }
+    this._state = newState;
+    this._logger.log(`Subscription ${this._dialog ? this._dialog.id : void 0} transitioned to ${this._state}`);
+    this._stateEventEmitter.emit(this._state);
+    if (newState === SubscriptionState2.Terminated) {
+      this.dispose();
+    }
+  }
+};
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/api/subscriber.js
+var Subscriber = class extends Subscription {
+  /**
+   * Constructor.
+   * @param userAgent - User agent. See {@link UserAgent} for details.
+   * @param targetURI - The request URI identifying the subscribed event.
+   * @param eventType - The event type identifying the subscribed event.
+   * @param options - Options bucket. See {@link SubscriberOptions} for details.
+   */
+  constructor(userAgent, targetURI, eventType, options = {}) {
+    super(userAgent, options);
+    this.body = void 0;
+    this.logger = userAgent.getLogger("sip.Subscriber");
+    if (options.body) {
+      this.body = {
+        body: options.body,
+        contentType: options.contentType ? options.contentType : "application/sdp"
+      };
+    }
+    this.targetURI = targetURI;
+    this.event = eventType;
+    if (options.expires === void 0) {
+      this.expires = 3600;
+    } else if (typeof options.expires !== "number") {
+      this.logger.warn(`Option "expires" must be a number. Using default of 3600.`);
+      this.expires = 3600;
+    } else {
+      this.expires = options.expires;
+    }
+    this.extraHeaders = (options.extraHeaders || []).slice();
+    this.subscriberRequest = this.initSubscriberRequest();
+    this.outgoingRequestMessage = this.subscriberRequest.message;
+    this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
+    this._userAgent._subscriptions[this.id] = this;
+  }
+  /**
+   * Destructor.
+   * @internal
+   */
+  dispose() {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.logger.log(`Subscription ${this.id} in state ${this.state} is being disposed`);
+    delete this._userAgent._subscriptions[this.id];
+    if (this.retryAfterTimer) {
+      clearTimeout(this.retryAfterTimer);
+      this.retryAfterTimer = void 0;
+    }
+    this.subscriberRequest.dispose();
+    return super.dispose().then(() => {
+      if (this.state !== SubscriptionState2.Subscribed) {
+        return;
+      }
+      if (!this._dialog) {
+        throw new Error("Dialog undefined.");
+      }
+      if (this._dialog.subscriptionState === SubscriptionState.Pending || this._dialog.subscriptionState === SubscriptionState.Active) {
+        const dialog = this._dialog;
+        return new Promise((resolve, reject) => {
+          dialog.delegate = {
+            onTerminated: () => resolve()
+          };
+          dialog.unsubscribe();
+        });
+      }
+    });
+  }
+  /**
+   * Subscribe to event notifications.
+   *
+   * @remarks
+   * Send an initial SUBSCRIBE request if no subscription as been established.
+   * Sends a re-SUBSCRIBE request if the subscription is "active".
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  subscribe(options = {}) {
+    switch (this.subscriberRequest.state) {
+      case SubscriptionState.Initial:
+        if (this.state === SubscriptionState2.Initial) {
+          this.stateTransition(SubscriptionState2.NotifyWait);
+        }
+        this.subscriberRequest.subscribe().then((result) => {
+          if (result.success) {
+            if (result.success.subscription) {
+              this._dialog = result.success.subscription;
+              this._dialog.delegate = {
+                onNotify: (request) => this.onNotify(request),
+                onRefresh: (request) => this.onRefresh(request),
+                onTerminated: () => {
+                  if (this.state !== SubscriptionState2.Terminated) {
+                    this.stateTransition(SubscriptionState2.Terminated);
+                  }
+                }
+              };
+            }
+            this.onNotify(result.success.request);
+          } else if (result.failure) {
+            this.unsubscribe();
+          }
+        });
+        break;
+      case SubscriptionState.NotifyWait:
+        break;
+      case SubscriptionState.Pending:
+        break;
+      case SubscriptionState.Active:
+        if (this._dialog) {
+          const request = this._dialog.refresh();
+          request.delegate = {
+            onAccept: (response) => this.onAccepted(response),
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onRedirect: (response) => this.unsubscribe(),
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onReject: (response) => this.unsubscribe()
+          };
+        }
+        break;
+      case SubscriptionState.Terminated:
+        break;
+      default:
+        break;
+    }
+    return Promise.resolve();
+  }
+  /**
+   * {@inheritDoc Subscription.unsubscribe}
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  unsubscribe(options = {}) {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    switch (this.subscriberRequest.state) {
+      case SubscriptionState.Initial:
+        break;
+      case SubscriptionState.NotifyWait:
+        break;
+      case SubscriptionState.Pending:
+        if (this._dialog) {
+          this._dialog.unsubscribe();
+        }
+        break;
+      case SubscriptionState.Active:
+        if (this._dialog) {
+          this._dialog.unsubscribe();
+        }
+        break;
+      case SubscriptionState.Terminated:
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+    this.stateTransition(SubscriptionState2.Terminated);
+    return Promise.resolve();
+  }
+  /**
+   * Sends a re-SUBSCRIBE request if the subscription is "active".
+   * @deprecated Use `subscribe` instead.
+   * @internal
+   */
+  _refresh() {
+    if (this.subscriberRequest.state === SubscriptionState.Active) {
+      return this.subscribe();
+    }
+    return Promise.resolve();
+  }
+  /** @internal */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onAccepted(response) {
+  }
+  /** @internal */
+  onNotify(request) {
+    if (this.disposed) {
+      request.accept();
+      return;
+    }
+    if (this.state !== SubscriptionState2.Subscribed) {
+      this.stateTransition(SubscriptionState2.Subscribed);
+    }
+    if (this.delegate && this.delegate.onNotify) {
+      const notification = new Notification(request);
+      this.delegate.onNotify(notification);
+    } else {
+      request.accept();
+    }
+    const subscriptionState = request.message.parseHeader("Subscription-State");
+    if (subscriptionState && subscriptionState.state) {
+      switch (subscriptionState.state) {
+        case "terminated":
+          if (subscriptionState.reason) {
+            this.logger.log(`Terminated subscription with reason ${subscriptionState.reason}`);
+            switch (subscriptionState.reason) {
+              case "deactivated":
+              case "timeout":
+                this.initSubscriberRequest();
+                this.subscribe();
+                return;
+              case "probation":
+              case "giveup":
+                this.initSubscriberRequest();
+                if (subscriptionState.params && subscriptionState.params["retry-after"]) {
+                  this.retryAfterTimer = setTimeout(() => {
+                    this.subscribe();
+                  }, subscriptionState.params["retry-after"]);
+                } else {
+                  this.subscribe();
+                }
+                return;
+              case "rejected":
+              case "noresource":
+              case "invariant":
+                break;
+            }
+          }
+          this.unsubscribe();
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  /** @internal */
+  onRefresh(request) {
+    request.delegate = {
+      onAccept: (response) => this.onAccepted(response)
+    };
+  }
+  initSubscriberRequest() {
+    const options = {
+      extraHeaders: this.extraHeaders,
+      body: this.body ? fromBodyLegacy(this.body) : void 0
+    };
+    this.subscriberRequest = new SubscriberRequest(this._userAgent.userAgentCore, this.targetURI, this.event, this.expires, options);
+    this.subscriberRequest.delegate = {
+      onAccept: (response) => this.onAccepted(response)
+    };
+    return this.subscriberRequest;
+  }
+};
+var SubscriberRequest = class {
+  constructor(core, target, event, expires, options, delegate) {
+    this.core = core;
+    this.target = target;
+    this.event = event;
+    this.expires = expires;
+    this.subscribed = false;
+    this.logger = core.loggerFactory.getLogger("sip.Subscriber");
+    this.delegate = delegate;
+    const allowHeader = "Allow: " + AllowedMethods.toString();
+    const extraHeaders = (options && options.extraHeaders || []).slice();
+    extraHeaders.push(allowHeader);
+    extraHeaders.push("Event: " + this.event);
+    extraHeaders.push("Expires: " + this.expires);
+    extraHeaders.push("Contact: " + this.core.configuration.contact.toString());
+    const body = options && options.body;
+    this.message = core.makeOutgoingRequestMessage(C.SUBSCRIBE, this.target, this.core.configuration.aor, this.target, {}, extraHeaders, body);
+  }
+  /** Destructor. */
+  dispose() {
+    if (this.request) {
+      this.request.waitNotifyStop();
+      this.request.dispose();
+      this.request = void 0;
+    }
+  }
+  /** Subscription state. */
+  get state() {
+    if (this.subscription) {
+      return this.subscription.subscriptionState;
+    } else if (this.subscribed) {
+      return SubscriptionState.NotifyWait;
+    } else {
+      return SubscriptionState.Initial;
+    }
+  }
+  /**
+   * Establish subscription.
+   * @param options Options bucket.
+   */
+  subscribe() {
+    if (this.subscribed) {
+      return Promise.reject(new Error("Not in initial state. Did you call subscribe more than once?"));
+    }
+    this.subscribed = true;
+    return new Promise((resolve) => {
+      if (!this.message) {
+        throw new Error("Message undefined.");
+      }
+      this.request = this.core.subscribe(this.message, {
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // 200-class responses indicate that the subscription has been accepted
+        // and that a NOTIFY request will be sent immediately.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onAccept: (response) => {
+          if (this.delegate && this.delegate.onAccept) {
+            this.delegate.onAccept(response);
+          }
+        },
+        // Due to the potential for out-of-order messages, packet loss, and
+        // forking, the subscriber MUST be prepared to receive NOTIFY requests
+        // before the SUBSCRIBE transaction has completed.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.4
+        onNotify: (requestWithSubscription) => {
+          this.subscription = requestWithSubscription.subscription;
+          if (this.subscription) {
+            this.subscription.autoRefresh = true;
+          }
+          resolve({ success: requestWithSubscription });
+        },
+        // If this Timer N expires prior to the receipt of a NOTIFY request,
+        // the subscriber considers the subscription failed, and cleans up
+        // any state associated with the subscription attempt.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.4
+        onNotifyTimeout: () => {
+          resolve({ failure: {} });
+        },
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // Non-200-class final responses indicate that no subscription or new
+        // dialog usage has been created, and no subsequent NOTIFY request will
+        // be sent.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onRedirect: (response) => {
+          resolve({ failure: { response } });
+        },
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // Non-200-class final responses indicate that no subscription or new
+        // dialog usage has been created, and no subsequent NOTIFY request will
+        // be sent.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onReject: (response) => {
+          resolve({ failure: { response } });
+        }
+      });
+    });
+  }
+};
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/core/index.js
+var core_exports = {};
+__export(core_exports, {
+  ByeUserAgentClient: () => ByeUserAgentClient,
+  ByeUserAgentServer: () => ByeUserAgentServer,
+  C: () => C,
+  CancelUserAgentClient: () => CancelUserAgentClient,
+  ClientTransaction: () => ClientTransaction,
+  Dialog: () => Dialog,
+  DigestAuthentication: () => DigestAuthentication,
+  Exception: () => Exception,
+  Grammar: () => Grammar,
+  IncomingMessage: () => IncomingMessage,
+  IncomingRequestMessage: () => IncomingRequestMessage,
+  IncomingResponseMessage: () => IncomingResponseMessage,
+  InfoUserAgentClient: () => InfoUserAgentClient,
+  InfoUserAgentServer: () => InfoUserAgentServer,
+  InviteClientTransaction: () => InviteClientTransaction,
+  InviteServerTransaction: () => InviteServerTransaction,
+  InviteUserAgentClient: () => InviteUserAgentClient,
+  InviteUserAgentServer: () => InviteUserAgentServer,
+  Levels: () => Levels,
+  Logger: () => Logger,
+  LoggerFactory: () => LoggerFactory,
+  MessageUserAgentClient: () => MessageUserAgentClient,
+  MessageUserAgentServer: () => MessageUserAgentServer,
+  NameAddrHeader: () => NameAddrHeader,
+  NonInviteClientTransaction: () => NonInviteClientTransaction,
+  NonInviteServerTransaction: () => NonInviteServerTransaction,
+  NotifyUserAgentClient: () => NotifyUserAgentClient,
+  NotifyUserAgentServer: () => NotifyUserAgentServer,
+  OutgoingRequestMessage: () => OutgoingRequestMessage,
+  Parameters: () => Parameters,
+  Parser: () => Parser,
+  PrackUserAgentClient: () => PrackUserAgentClient,
+  PrackUserAgentServer: () => PrackUserAgentServer,
+  PublishUserAgentClient: () => PublishUserAgentClient,
+  ReInviteUserAgentClient: () => ReInviteUserAgentClient,
+  ReInviteUserAgentServer: () => ReInviteUserAgentServer,
+  ReSubscribeUserAgentClient: () => ReSubscribeUserAgentClient,
+  ReSubscribeUserAgentServer: () => ReSubscribeUserAgentServer,
+  ReferUserAgentClient: () => ReferUserAgentClient,
+  ReferUserAgentServer: () => ReferUserAgentServer,
+  RegisterUserAgentClient: () => RegisterUserAgentClient,
+  RegisterUserAgentServer: () => RegisterUserAgentServer,
+  ServerTransaction: () => ServerTransaction,
+  SessionDialog: () => SessionDialog,
+  SessionState: () => SessionState,
+  SignalingState: () => SignalingState,
+  SubscribeUserAgentClient: () => SubscribeUserAgentClient,
+  SubscribeUserAgentServer: () => SubscribeUserAgentServer,
+  SubscriptionDialog: () => SubscriptionDialog,
+  SubscriptionState: () => SubscriptionState,
+  Timers: () => Timers,
+  Transaction: () => Transaction,
+  TransactionState: () => TransactionState,
+  TransactionStateError: () => TransactionStateError,
+  TransportError: () => TransportError,
+  URI: () => URI,
+  UserAgentClient: () => UserAgentClient,
+  UserAgentCore: () => UserAgentCore,
+  UserAgentServer: () => UserAgentServer,
+  constructOutgoingResponse: () => constructOutgoingResponse,
+  equivalentURI: () => equivalentURI,
+  fromBodyLegacy: () => fromBodyLegacy,
+  getBody: () => getBody,
+  isBody: () => isBody
+});
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/core/user-agents/cancel-user-agent-client.js
+var CancelUserAgentClient = class extends UserAgentClient {
+  constructor(core, message, delegate) {
+    super(NonInviteClientTransaction, core, message, delegate);
+  }
+};
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/core/user-agents/re-subscribe-user-agent-server.js
+var ReSubscribeUserAgentServer = class extends UserAgentServer {
+  constructor(dialog, message, delegate) {
+    super(NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
+  }
+};
+
+// node_modules/.pnpm/sip.js@0.21.2/node_modules/sip.js/lib/index.js
+var version = LIBRARY_VERSION;
+var name = "sip.js";
+export {
+  Ack,
+  Bye,
+  Cancel,
+  ContentTypeUnsupportedError,
+  core_exports as Core,
+  EmitterImpl,
+  Grammar,
+  Info,
+  Invitation,
+  Inviter,
+  Message,
+  Messager,
+  NameAddrHeader,
+  Notification,
+  Parameters,
+  Publisher,
+  PublisherState,
+  Referral,
+  Registerer,
+  RegistererState,
+  RequestPendingError,
+  SIPExtension,
+  Session,
+  SessionDescriptionHandlerError,
+  SessionState2 as SessionState,
+  SessionTerminatedError,
+  StateTransitionError,
+  Subscriber,
+  Subscription,
+  SubscriptionState2 as SubscriptionState,
+  TransportState,
+  URI,
+  UserAgent,
+  UserAgentRegisteredOptionTags,
+  UserAgentState,
+  web_exports as Web,
+  equivalentURI,
+  name,
+  version
+};
+//# sourceMappingURL=sip__js.js.map
