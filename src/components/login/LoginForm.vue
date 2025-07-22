@@ -107,8 +107,8 @@ const handleLogin = async () => {
 const onExtensionSelected = async () => {
   showExtensionModal.value = false
   await sipStore.initializeSip({
-    username: extensionStore.selectedExtension?.extension || '',
-    password: extensionStore.selectedExtension?.password || '',
+    username: "123",
+    password: "miguel",
     displayName: 'LDLQ2',
   })
   console.log('Extension selected:', extensionStore.selectedExtension?.password);
