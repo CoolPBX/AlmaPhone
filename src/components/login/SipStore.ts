@@ -28,11 +28,11 @@ export const useSipStore = defineStore('sip', () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: '',
+    server: 'wss://hornblower.doesntexist.org:7443',
     username: '',
     password: '',
-    domain: '',
-    displayName: '',
+    domain: 'hornblower.doesntexist.org',
+    displayName: 'LDLQ2',
   })
 
   const createSimpleUserDelegate = (): SimpleUserDelegate => ({

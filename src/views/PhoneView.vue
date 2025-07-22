@@ -295,6 +295,7 @@ const lastDialedNumber = ref('')
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
 const selectedMicId = ref<string | null>(null)
+const numberInputRef = ref<HTMLInputElement | null>(null)
 
 const isCallActive = computed(() => {
   const callStates = ['calling', 'ringing', 'connected', 'establishing']
