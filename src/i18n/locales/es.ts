@@ -34,6 +34,8 @@ export default {
     sessionExpired: 'Sesión expirada',
     connectedAs: 'Conectado como',
     advacedOptions: 'Opciones Avanzadas',
+    loggingOut: 'Cerrando sesión...',
+    logOut: 'Cerrar Sesión',
   },
 
   // Extension Selector

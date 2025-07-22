@@ -41,7 +41,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          {{ authStore.isLoading ? 'Cerrando...' : 'Cerrar Sesión' }}
+          {{ authStore.isLoading ? t('auth.loggingOut') : t('auth.logOut') }}
         </button>
       </div>
     </div>
@@ -58,6 +58,7 @@ import Dropdown from 'primevue/dropdown'
 import { useSipStore } from '@/components/login/SipStore'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 
 
 const router = useRouter()
@@ -65,6 +66,7 @@ const authStore = useAuthStore()
 const extensionStore = useExtensionStore()
 const sipStore = useSipStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const handleLogout = async () => {
   try {

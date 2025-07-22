@@ -5,8 +5,7 @@
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ extensionStore.selectedExtension?.extension }} ({{
-              extensionStore.selectedExtension?.effective_caller_id_name ?? '-' }})
+            {{ extensionStore.selectedExtension?.extension }} ({{ phoneStore.sipConfig.displayName }})
           </h3>
           <div class="flex items-center space-x-2">
             <div :class="connectionStatusClass" class="w-3 h-3 rounded-full"></div>
@@ -38,17 +37,14 @@
       </div>
 
       <div class="flex justify-center space-x-3 mb-6">
-        <button @click="handleCall" :disabled="!canCall" :class="callButtonClass"
+        <button @click="handleCall" :disabled="!canMakeCall && !canEndCall" :class="callButtonClass"
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
           <svg v-if="!isCallActive" class="w-8 h-8 text-green-200" fill="none" stroke="currentColor"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
-          <svg v-else class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 3l18 18" />
-          </svg>
+          <PhoneOff v-else :size="32" class="text-white" />
         </button>
 
         <button @click="toggleMute"
@@ -271,6 +267,7 @@ import {
   BellOff,
   Voicemail,
   Mic,
+  PhoneOff
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
@@ -298,12 +295,10 @@ const lastDialedNumber = ref('')
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
 const selectedMicId = ref<string | null>(null)
-const numberInputRef = ref<HTMLInputElement | null>(null)
 
 const isCallActive = computed(() => {
-  return phoneStore.callState === 'calling' ||
-    phoneStore.callState === 'ringing' ||
-    phoneStore.callState === 'connected'
+  const callStates = ['calling', 'ringing', 'connected', 'establishing']
+  return callStates.includes(phoneStore.callState)
 })
 
 const activityLogs = ref([
@@ -349,29 +344,35 @@ const recentCalls = ref([
 ])
 
 const connectionStatus = computed(() => {
-  return phoneStore.isConnected ? 'Conectado' : 'Desconectado'
+  return phoneStore.isRegistered ? 'Conectado' : 'Desconectado'
 })
 
 const connectionStatusClass = computed(() => {
-  return phoneStore.isConnected ? 'bg-green-500' : 'bg-red-500'
+  return phoneStore.isRegistered ? 'bg-green-500' : 'bg-red-500'
 })
 
 const connectionStatusTextClass = computed(() => {
-  return phoneStore.isConnected ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+  return phoneStore.isRegistered ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
 })
 
-const canCall = computed(() => {
-  return displayNumber.value.length > 0 && !isCallActive.value && phoneStore.isConnected
+const canMakeCall = computed(() => {
+  return displayNumber.value.length > 0 && !isCallActive.value && phoneStore.isRegistered
+})
+
+const canEndCall = computed(() => {
+  return isCallActive.value
 })
 
 const callButtonClass = computed(() => {
-  if (!canCall.value && !isCallActive.value) {
+  if (isCallActive.value) {
+    return 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
+  }
+  if (!canMakeCall.value) {
     return 'bg-gray-400 cursor-not-allowed'
   }
-  return isCallActive.value
-    ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
-    : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
+  return 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
 })
+
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (isCallActive.value) return
@@ -396,13 +397,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'Enter' && canCall.value) {
+  if (key === 'Enter' && canMakeCall.value) {
     event.preventDefault()
     handleCall()
     return
   }
 
-  if (key === 'Escape' && isCallActive.value) {
+  if (key === 'Escape' && canEndCall.value) {
     event.preventDefault()
     handleCall()
     return
@@ -470,18 +471,14 @@ const clearDisplay = () => {
   displayNumber.value = ''
 }
 
-const handleCall = async () => {
-  if (isCallActive.value) {
-    await endCall()
-  } else if (canCall.value) {
-    await makeCall(displayNumber.value)
-  }
-}
+
 
 const makeCall = async (number: string) => {
   try {
     lastDialedNumber.value = number
+    
     const success = await phoneStore.makeCall(number)
+    
     if (success) {
       currentCallNumber.value = number
       callStartTime.value = new Date()
@@ -495,6 +492,8 @@ const makeCall = async (number: string) => {
       })
 
       addActivityLog(`Llamada iniciada a ${number}`)
+    } else {
+      addActivityLog(`Error al iniciar llamada a ${number}`)
     }
   } catch (error) {
     console.error('Error making call:', error)
@@ -502,15 +501,42 @@ const makeCall = async (number: string) => {
   }
 }
 
+
 const endCall = async () => {
   try {
+    console.log('Intentando terminar llamada, estado actual:', phoneStore.callState)
+    
     await phoneStore.endCall()
+    
     addActivityLog(`Llamada terminada con ${currentCallNumber.value}`)
+    
     currentCallNumber.value = ''
     callStartTime.value = null
     stopCallTimer()
+    
+    console.log('Llamada terminada, nuevo estado:', phoneStore.callState)
   } catch (error) {
     console.error('Error ending call:', error)
+    addActivityLog('Error al terminar la llamada')
+  }
+}
+
+
+const handleCall = async () => {
+  console.log('handleCall - Estados:', {
+    isCallActive: isCallActive.value,
+    phoneStoreCallState: phoneStore.callState,
+    canMakeCall: canMakeCall.value,
+    canEndCall: canEndCall.value,
+    displayNumber: displayNumber.value
+  })
+  
+  if (isCallActive.value && canEndCall.value) {
+    console.log('Terminando llamada...')
+    await endCall()
+  } else if (!isCallActive.value && canMakeCall.value) {
+    console.log('Iniciando llamada...')
+    await makeCall(displayNumber.value)
   }
 }
 
@@ -611,21 +637,20 @@ watch(() => phoneStore.callState, (newState) => {
     stopCallTimer()
     currentCallNumber.value = ''
     callStartTime.value = null
+
   }
 })
 
 onMounted(async () => {
-  const sipStore = useSipStore()
-  sipStore.loadSipConfigFromStorage()
+  phoneStore.loadSipConfigFromStorage()
 
-  // Sincronizar estados locales con el store
-  isDnd.value = sipStore.isDnd
-  isAutoAnswer.value = sipStore.isAutoAnswer
+  isDnd.value = phoneStore.isDnd
+  isAutoAnswer.value = phoneStore.isAutoAnswer
 
   window.addEventListener('keydown', handleKeyDown)
 
-  if (sipStore.sipConfig.username && sipStore.sipConfig.password && sipStore.sipConfig.server && !sipStore.isConnected) {
-    await sipStore.initializeSip(sipStore.sipConfig)
+  if (phoneStore.sipConfig.username && phoneStore.sipConfig.password && phoneStore.sipConfig.server && !phoneStore.isConnected) {
+    await phoneStore.initializeSip(phoneStore.sipConfig)
   }
 })
 

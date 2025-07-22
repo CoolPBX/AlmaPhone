@@ -38,6 +38,15 @@
           />
           <label for="wssPort">WSS Proxy Port</label>
         </FloatLabel>
+
+        <FloatLabel>
+          <InputText
+            id="displayName"
+            v-model="form.displayName"
+            class="w-full"
+          />
+          <label for="displayName">Display Name</label>
+        </FloatLabel>
       </div>
 
       <Message
@@ -98,8 +107,10 @@ const { t } = useI18n()
 const form = ref({
   sipDomain: sipStore.sipConfig.domain,
   wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
+  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
+  displayName: sipStore.sipConfig.displayName
 })
+
 
 const isValidDomain = (domain: string): boolean => {
   if (!domain) return false
@@ -136,6 +147,7 @@ const handleSave = () => {
     sipStore.updateAdvancedConfig({
       domain: form.value.sipDomain,
       server: `wss://${form.value.wssProxy}:${form.value.wssPort}`,
+      displayName: form.value.displayName
     })
     
     emit('saved')
@@ -149,7 +161,8 @@ const handleCancel = () => {
   form.value = {
     sipDomain: sipStore.sipConfig.domain,
     wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
+    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
+    displayName: sipStore.sipConfig.displayName
   }
   error.value = null
   emit('close')

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useToast } from 'primevue/usetoast'
 import { URI } from 'sip.js/lib/grammar/uri'
 import {
   SimpleUser,
@@ -22,15 +23,16 @@ export const useSipStore = defineStore('sip', () => {
   const error = ref<string | null>(null)
   const isMuted = ref(false)
   const isOnHold = ref(false)
+  const toast = useToast()
 
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: 'wss://hornblower.doesntexist.org:7443',
+    server: '',
     username: '',
     password: '',
-    domain: 'hornblower.doesntexist.org',
-    displayName: 'LDLQ2',
+    domain: '',
+    displayName: '',
   })
 
   const createSimpleUserDelegate = (): SimpleUserDelegate => ({
@@ -61,6 +63,12 @@ export const useSipStore = defineStore('sip', () => {
     onCallAnswered: (): void => {
       console.log('Call answered')
       callState.value = 'connected'
+      toast.add({
+        severity: 'success',
+        summary: 'Call Answered',
+        detail: 'You are now connected to the call.',
+        life: 3000,
+      })
     },
     onCallHangup: (): void => {
       console.log('Call hangup')
@@ -68,6 +76,12 @@ export const useSipStore = defineStore('sip', () => {
       callStartTime.value = null
       isMuted.value = false
       isOnHold.value = false
+      toast.add({
+        severity: 'info',
+        summary: 'Call Ended',
+        detail: 'The call has been ended.',
+        life: 3000,
+      })
     },
     onCallHold: (held: boolean): void => {
       console.log(`Call hold ${held}`)
@@ -75,11 +89,25 @@ export const useSipStore = defineStore('sip', () => {
     },
     onRegistered: (): void => {
       console.log('Registered')
+      toast.add({
+        severity: 'success',
+        summary: 'Registered',
+        detail: 'You are registered to receive calls.',
+        life: 3000,
+      })
       isRegistered.value = true
     },
     onUnregistered: (): void => {
       console.log('Unregistered')
+      connectionState.value = 'disconnected'
+      toast.add({
+        severity: 'warn',
+        summary: 'Unregistered',
+        detail: 'You are no longer registered to receive calls.',
+        life: 3000,
+      })
       isRegistered.value = false
+      console.log('Unregistered from SIP server', isRegistered.value)
     },
     onServerConnect: (): void => {
       console.log('Server connected')
@@ -91,6 +119,12 @@ export const useSipStore = defineStore('sip', () => {
       isConnected.value = false
       isRegistered.value = false
       connectionState.value = 'disconnected'
+      toast.add({
+        severity: 'error',
+        summary: 'Server Disconnected',
+        detail: 'Connection to the server was lost. Attempting to reconnect...',
+        life: 5000,
+      })
 
       setTimeout(() => {
         if (simpleUser.value && connectionState.value === 'disconnected') {
@@ -116,7 +150,7 @@ export const useSipStore = defineStore('sip', () => {
         username: config.username,
         password: config.password,
         domain: config.domain || sipConfig.value.domain,
-        displayName: config.displayName,
+        displayName: config.displayName || sipConfig.value.displayName,
       }
 
       sipConfig.value = { ...sipConfig.value, ...finalConfig }
@@ -137,6 +171,10 @@ export const useSipStore = defineStore('sip', () => {
             audio: audioElement.value || undefined,
           },
         },
+        registererOptions: {
+          regId: 1,
+          expires: 120,
+        },
         userAgentOptions: {
           displayName: sipConfig.value.displayName,
           authorizationUsername: sipConfig.value.username,
@@ -152,6 +190,9 @@ export const useSipStore = defineStore('sip', () => {
             wsServerReconnectionTimeout: 1,
             connectionRecoveryMaxInterval: 3,
             connectionRecoveryMinInterval: 2,
+          },
+          contactParams: {
+            transport: 'wss',
           },
         },
       }
@@ -209,6 +250,7 @@ export const useSipStore = defineStore('sip', () => {
     try {
       if (simpleUser.value) {
         await simpleUser.value.hangup()
+        callState.value = 'idle'
       }
     } catch (err) {
       console.error('Error terminando llamada:', err)
@@ -316,12 +358,19 @@ export const useSipStore = defineStore('sip', () => {
     audioElement.value = element
   }
 
-  const updateAdvancedConfig = (config: { domain?: string; server?: string }): void => {
+  const updateAdvancedConfig = (config: {
+    domain?: string
+    server?: string
+    displayName?: string
+  }): void => {
     if (config.domain) {
       sipConfig.value.domain = config.domain
     }
     if (config.server) {
       sipConfig.value.server = config.server
+    }
+    if (config.displayName) {
+      sipConfig.value.displayName = config.displayName
     }
   }
 
