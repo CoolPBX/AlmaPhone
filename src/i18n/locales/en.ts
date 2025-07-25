@@ -33,6 +33,9 @@ export default {
     loginRequired: 'Login required',
     sessionExpired: 'Session expired',
     connectedAs: 'Connected as',
+    advacedOptions: 'Advanced Options',
+    loggingOut: 'Logging out...',
+    logOut: 'Log Out',
   },
 
   // Extension Selector
@@ -68,7 +71,7 @@ export default {
 
     phoneView: {
     recentCalls: 'Recent Calls',
-    callTo: 'Calling {{number}}',
+    callTo: 'Calling',
     redial: 'Redial',
     dnd: 'DND',
     dndOn: 'DND ON',

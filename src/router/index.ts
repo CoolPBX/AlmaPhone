@@ -62,12 +62,6 @@ router.beforeEach(async (to, _from, next) => {
     ...to.meta,
   }
 
-  console.log(`Navigating to ${to.path}`, {
-    isAuthenticated: authStore.isAuthenticated,
-    hasExtension: !!extensionStore.selectedExtension,
-    routeMeta: meta,
-  })
-
   const needsAuth = meta.requiresAuth || meta.requiresExtension
 
   if (needsAuth && !authStore.isAuthenticated && to.path !== '/login') {

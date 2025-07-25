@@ -5,8 +5,7 @@
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ extensionStore.selectedExtension?.extension }} ({{
-              extensionStore.selectedExtension?.effective_caller_id_name ?? '-' }})
+            {{ extensionStore.selectedExtension?.extension }} ({{ phoneStore.sipConfig.displayName }})
           </h3>
           <div class="flex items-center space-x-2">
             <div :class="connectionStatusClass" class="w-3 h-3 rounded-full"></div>
@@ -20,6 +19,7 @@
       <div class="mb-6">
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-2 border-gray-200 dark:border-gray-600">
           <input v-model="displayNumber" type="text" readonly :placeholder="$t('phoneView.enternumber')"
+            ref="numberInputRef"
             class="w-full text-center text-2xl font-mono bg-transparent border-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-400" />
         </div>
       </div>
@@ -37,16 +37,14 @@
       </div>
 
       <div class="flex justify-center space-x-3 mb-6">
-        <button @click="handleCall" :disabled="!canCall" :class="callButtonClass"
+        <button @click="handleCall" :disabled="!canMakeCall && !canEndCall" :class="callButtonClass"
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg v-if="!isCallActive" class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="!isCallActive" class="w-8 h-8 text-green-200" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
-          <svg v-else class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 3l18 18" />
-          </svg>
+          <PhoneOff v-else :size="32" class="text-white" />
         </button>
 
         <button @click="toggleMute"
@@ -78,7 +76,7 @@
             <div class="flex items-center space-x-3">
               <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
               <span class="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {{ t('phoneView.callTo', { number: currentCallNumber }) }}
+                {{ t('phoneView.callTo', { currentCallNumber }) }}
               </span>
             </div>
             <span class="text-sm text-blue-700 dark:text-blue-300">
@@ -131,20 +129,19 @@
       </div>
 
       <div class="grid grid-cols-2 gap-3 mb-6">
-        <button @click="redial" :disabled="!lastDialedNumber" v-tooltip.top="'Repetir última llamada'"
+        <button @click="redial" :disabled="!lastDialedNumber"
           class="control-button bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex flex-col items-center space-y-1">
           <RotateCcw :size="20" />
           <span class="text-xs">{{ t('phoneView.redial') }}</span>
         </button>
 
         <button @click="toggleDnd" :class="isDnd ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
-          v-tooltip.top="'No molestar'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <BellOff :size="20" />
           <span class="text-xs">{{ t(isDnd ? 'phoneView.dndOn' : 'phoneView.dnd') }}</span>
         </button>
 
-        <button @click="checkVoicemail" v-tooltip.top="'Revisar mensajes de voz'"
+        <button @click="checkVoicemail"
           class="control-button bg-teal-500 hover:bg-teal-600 text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <Voicemail :size="20" />
           <span class="text-xs">VoiceMail: {{ phoneStore.voicemail.new }}/{{ phoneStore.voicemail.old }}</span>
@@ -153,7 +150,6 @@
         <div class="relative">
           <button @click="toggleDialOptions"
             :class="showAdvancedDialOptions ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'"
-            v-tooltip.top="'Configurar micrófono'"
             class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 w-full">
             <Mic :size="20" />
             <span class="text-xs">{{ t(showAdvancedDialOptions ? 'phoneView.micOn' : 'phoneView.mic') }}</span>
@@ -181,19 +177,9 @@
         </div>
       </div>
 
-      <div v-if="isCallActive" class="grid grid-cols-2 gap-3 mb-6">
-        <button @click="toggleMute" :class="isMuted ? 'bg-red-600' : 'bg-orange-500 hover:bg-orange-600'"
-          v-tooltip.top="isMuted ? 'Activar timbre' : 'Silenciar timbre'"
-          class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
-          <component :is="isMuted ? 'VolumeX' : 'Volume2'" :size="20" />
-          <span class="text-xs">{{ isMuted ? 'UNMUTE' : 'MUTE' }}</span>
-        </button>
-      </div>
 
       <div class="grid grid-cols-1 gap-3">
-        <button @click="toggleAutoAnswer"
-          :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
-          v-tooltip.top="'Respuesta automática'"
+        <button @click="toggleAutoAnswer" :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
           class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1">
           <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
           <span class="text-xs">{{ t(isAutoAnswer ? 'phoneView.autoAnswerOn' : 'phoneView.autoAnswer') }}</span>
@@ -273,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
 import { useSipStore } from '@/components/login/SipStore'
 import {
@@ -281,6 +267,7 @@ import {
   BellOff,
   Voicemail,
   Mic,
+  PhoneOff
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
@@ -290,7 +277,7 @@ const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 
 const displayNumber = ref('')
-const isCallActive = ref(false)
+
 const currentCallNumber = ref('')
 const callStartTime = ref<Date | null>(null)
 const callDuration = ref('00:00')
@@ -302,13 +289,18 @@ const deleteStartTime = ref<number | null>(null)
 const HOLD_DURATION = 500
 
 const isDnd = ref(false)
-const isMuted = ref(false)
 const isAutoAnswer = ref(false)
 const lastDialedNumber = ref('')
 
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
 const selectedMicId = ref<string | null>(null)
+const numberInputRef = ref<HTMLInputElement | null>(null)
+
+const isCallActive = computed(() => {
+  const callStates = ['calling', 'ringing', 'connected', 'establishing']
+  return callStates.includes(phoneStore.callState)
+})
 
 const activityLogs = ref([
   { id: 1, timestamp: new Date(), message: 'SIP inicializado' },
@@ -353,29 +345,35 @@ const recentCalls = ref([
 ])
 
 const connectionStatus = computed(() => {
-  return phoneStore.isConnected ? 'Conectado' : 'Desconectado'
+  return phoneStore.isRegistered ? 'Conectado' : 'Desconectado'
 })
 
 const connectionStatusClass = computed(() => {
-  return phoneStore.isConnected ? 'bg-green-500' : 'bg-red-500'
+  return phoneStore.isRegistered ? 'bg-green-500' : 'bg-red-500'
 })
 
 const connectionStatusTextClass = computed(() => {
-  return phoneStore.isConnected ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+  return phoneStore.isRegistered ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
 })
 
-const canCall = computed(() => {
-  return displayNumber.value.length > 0 && !isCallActive.value && phoneStore.isConnected
+const canMakeCall = computed(() => {
+  return displayNumber.value.length > 0 && !isCallActive.value && phoneStore.isRegistered
+})
+
+const canEndCall = computed(() => {
+  return isCallActive.value
 })
 
 const callButtonClass = computed(() => {
-  if (!canCall.value) {
+  if (isCallActive.value) {
+    return 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
+  }
+  if (!canMakeCall.value) {
     return 'bg-gray-400 cursor-not-allowed'
   }
-  return isCallActive.value
-    ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
-    : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
+  return 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
 })
+
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (isCallActive.value) return
@@ -400,13 +398,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'Enter' && canCall.value) {
+  if (key === 'Enter' && canMakeCall.value) {
     event.preventDefault()
     handleCall()
     return
   }
 
-  if (key === 'Escape' && isCallActive.value) {
+  if (key === 'Escape' && canEndCall.value) {
     event.preventDefault()
     handleCall()
     return
@@ -431,9 +429,8 @@ const addDigit = (digit: string) => {
     sound.currentTime = 0
     sound.play()
   }
-  if (displayNumber.value.length < 40) {
-    displayNumber.value += digit
-  }
+
+  displayNumber.value += digit
 }
 
 const startDelete = (event: MouseEvent | TouchEvent) => {
@@ -475,22 +472,15 @@ const clearDisplay = () => {
   displayNumber.value = ''
 }
 
-const handleCall = async () => {
-  if (!canCall.value) return
 
-  if (isCallActive.value) {
-    await endCall()
-  } else {
-    await makeCall(displayNumber.value)
-  }
-}
 
 const makeCall = async (number: string) => {
   try {
     lastDialedNumber.value = number
+    
     const success = await phoneStore.makeCall(number)
+    
     if (success) {
-      isCallActive.value = true
       currentCallNumber.value = number
       callStartTime.value = new Date()
       startCallTimer()
@@ -503,6 +493,8 @@ const makeCall = async (number: string) => {
       })
 
       addActivityLog(`Llamada iniciada a ${number}`)
+    } else {
+      addActivityLog(`Error al iniciar llamada a ${number}`)
     }
   } catch (error) {
     console.error('Error making call:', error)
@@ -510,16 +502,42 @@ const makeCall = async (number: string) => {
   }
 }
 
+
 const endCall = async () => {
   try {
+    console.log('Intentando terminar llamada, estado actual:', phoneStore.callState)
+    
     await phoneStore.endCall()
-    isCallActive.value = false
+    
     addActivityLog(`Llamada terminada con ${currentCallNumber.value}`)
+    
     currentCallNumber.value = ''
     callStartTime.value = null
     stopCallTimer()
+    
+    console.log('Llamada terminada, nuevo estado:', phoneStore.callState)
   } catch (error) {
     console.error('Error ending call:', error)
+    addActivityLog('Error al terminar la llamada')
+  }
+}
+
+
+const handleCall = async () => {
+  console.log('handleCall - Estados:', {
+    isCallActive: isCallActive.value,
+    phoneStoreCallState: phoneStore.callState,
+    canMakeCall: canMakeCall.value,
+    canEndCall: canEndCall.value,
+    displayNumber: displayNumber.value
+  })
+  
+  if (isCallActive.value && canEndCall.value) {
+    console.log('Terminando llamada...')
+    await endCall()
+  } else if (!isCallActive.value && canMakeCall.value) {
+    console.log('Iniciando llamada...')
+    await makeCall(displayNumber.value)
   }
 }
 
@@ -555,7 +573,6 @@ const formatTime = (date: Date) => {
   })
 }
 
-// Métodos de control
 const redial = () => {
   if (lastDialedNumber.value && !isCallActive.value) {
     displayNumber.value = lastDialedNumber.value
@@ -565,6 +582,7 @@ const redial = () => {
 
 const toggleDnd = () => {
   isDnd.value = !isDnd.value
+  phoneStore.isDnd = isDnd.value 
   addActivityLog(`DND ${isDnd.value ? 'activado' : 'desactivado'}`)
 }
 
@@ -572,13 +590,9 @@ const checkVoicemail = () => {
   addActivityLog('Verificando mensajes de voz')
 }
 
-// const toggleMute = () => {
-//   isMuted.value = !isMuted.value
-//   addActivityLog(`Micrófono ${isMuted.value ? 'silenciado' : 'activado'}`)
-// }
-
 const toggleAutoAnswer = () => {
   isAutoAnswer.value = !isAutoAnswer.value
+  phoneStore.isAutoAnswer = isAutoAnswer.value
   addActivityLog(`AutoAnswer ${isAutoAnswer.value ? 'activado' : 'desactivado'}`)
 }
 
@@ -619,8 +633,26 @@ const loadAudioInputDevices = async () => {
   }
 }
 
-onMounted(() => {
+watch(() => phoneStore.callState, (newState) => {
+  if (newState === 'ended' || newState === 'idle') {
+    stopCallTimer()
+    currentCallNumber.value = ''
+    callStartTime.value = null
+
+  }
+})
+
+onMounted(async () => {
+  phoneStore.loadSipConfigFromStorage()
+
+  isDnd.value = phoneStore.isDnd
+  isAutoAnswer.value = phoneStore.isAutoAnswer
+
   window.addEventListener('keydown', handleKeyDown)
+
+  if (phoneStore.sipConfig.username && phoneStore.sipConfig.password && phoneStore.sipConfig.server && !phoneStore.isConnected) {
+    await phoneStore.initializeSip(phoneStore.sipConfig)
+  }
 })
 
 onUnmounted(() => {
@@ -629,6 +661,14 @@ onUnmounted(() => {
     clearTimeout(deleteTimer.value)
   }
   window.removeEventListener('keydown', handleKeyDown)
+})
+
+watch(displayNumber, () => {
+  nextTick(() => {
+    if (numberInputRef.value) {
+      numberInputRef.value.scrollLeft = numberInputRef.value.scrollWidth
+    }
+  })
 })
 </script>
 

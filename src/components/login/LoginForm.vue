@@ -90,7 +90,6 @@ const isFormValid = computed(() => {
 })
 
 const onAdvancedOptionsSaved = () => {
-  // Opcional: mostrar mensaje de confirmación
   console.log('Configuración avanzada guardada')
 }
 
@@ -105,13 +104,15 @@ const handleLogin = async () => {
   }
 }
 
-const onExtensionSelected = () => {
+const onExtensionSelected = async () => {
   showExtensionModal.value = false
-  sipStore.initializeSip({
-    username: authStore.user?.username || '',
+  await sipStore.initializeSip({
+    username: extensionStore.selectedExtension?.extension || '',
     password: extensionStore.selectedExtension?.password || '',
     displayName: 'LDLQ2',
   })
+  console.log('Extension selected:', extensionStore.selectedExtension?.password);
+  
   router.push('/phone')
 }
 

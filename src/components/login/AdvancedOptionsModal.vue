@@ -1,7 +1,7 @@
 <template>
   <BaseModal
     :isOpen="isOpen"
-    title="Opciones Avanzadas"
+    :title="t('auth.advacedOptions')"
     size="lg"
     @close="$emit('close')"
   >
@@ -37,6 +37,15 @@
             :invalid="!isValidPort(form.wssPort)"
           />
           <label for="wssPort">WSS Proxy Port</label>
+        </FloatLabel>
+
+        <FloatLabel>
+          <InputText
+            id="displayName"
+            v-model="form.displayName"
+            class="w-full"
+          />
+          <label for="displayName">Display Name</label>
         </FloatLabel>
       </div>
 
@@ -75,6 +84,7 @@ import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import BaseModal from '@/core/presentation/components/BaseModal.vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   isOpen: boolean
@@ -90,14 +100,17 @@ const emit = defineEmits<Emits>()
 
 const sipStore = useSipStore()
 const error = ref<string | null>(null)
+const { t } = useI18n()
 
 
 
 const form = ref({
   sipDomain: sipStore.sipConfig.domain,
   wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
+  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
+  displayName: sipStore.sipConfig.displayName
 })
+
 
 const isValidDomain = (domain: string): boolean => {
   if (!domain) return false
@@ -107,7 +120,6 @@ const isValidDomain = (domain: string): boolean => {
 
 const isValidHost = (host: string): boolean => {
   if (!host) return false
-  // Acepta tanto IP como hostname
   const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
   const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?)*$/
   return ipRegex.test(host) || hostnameRegex.test(host)
@@ -135,6 +147,7 @@ const handleSave = () => {
     sipStore.updateAdvancedConfig({
       domain: form.value.sipDomain,
       server: `wss://${form.value.wssProxy}:${form.value.wssPort}`,
+      displayName: form.value.displayName
     })
     
     emit('saved')
@@ -148,13 +161,13 @@ const handleCancel = () => {
   form.value = {
     sipDomain: sipStore.sipConfig.domain,
     wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
+    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
+    displayName: sipStore.sipConfig.displayName
   }
   error.value = null
   emit('close')
 }
 
-// Resetear el formulario cuando se abre el modal
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
     form.value = {
