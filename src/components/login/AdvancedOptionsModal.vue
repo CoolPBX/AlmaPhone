@@ -173,7 +173,8 @@ watch(() => props.isOpen, (isOpen) => {
     form.value = {
       sipDomain: sipStore.sipConfig.domain,
       wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-      wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
+      wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
+      displayName: sipStore.sipConfig.displayName
     }
     error.value = null
   }
