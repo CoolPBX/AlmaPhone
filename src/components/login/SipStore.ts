@@ -132,6 +132,13 @@ export const useSipStore = defineStore('sip', () => {
         }
       }, 5000)
     },
+    onMessageReceived: (message: string): void => {
+      console.log('Message received:', message)
+
+      if (message.includes('Messages-Waiting:') || message.includes('Message-Waiting:')) {
+        parseMWIMessage(message)
+      }
+    },
   })
 
   const initializeSip = async (
@@ -407,6 +414,56 @@ export const useSipStore = defineStore('sip', () => {
     localStorage.setItem('sipConfig', JSON.stringify(sipConfig.value))
   }
 
+  const parseMWIMessage = (message: string): void => {
+    const lines = message.split('\n')
+    let newMessages = 0
+    let oldMessages = 0
+    let isWaiting = false
+
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+
+      if (
+        trimmedLine.startsWith('Messages-Waiting:') ||
+        trimmedLine.startsWith('Message-Waiting:')
+      ) {
+        isWaiting = trimmedLine.toLowerCase().includes('yes')
+      }
+
+      if (trimmedLine.startsWith('Voice-Message:')) {
+        const parts = trimmedLine.split(' ')
+        if (parts.length >= 2 && typeof parts[1] === 'string') {
+          const counts = parts[1].split('/')
+          newMessages = parseInt(counts[0] || '0') || 0
+          oldMessages = parseInt(counts[1] || '0') || 0
+        }
+      }
+    }
+
+    if (voicemail.value.new !== newMessages || voicemail.value.old !== oldMessages) {
+      voicemail.value = { new: newMessages, old: oldMessages }
+
+      if (newMessages > 0 && isWaiting) {
+        toast.add({
+          severity: 'info',
+          summary: 'Nuevo Mensaje de Voz',
+          detail: `Tienes ${newMessages} mensaje(s) de voz nuevo(s)`,
+          life: 5000,
+        })
+      }
+    }
+  }
+
+  const subscribeMWI = async (): Promise<void> => {
+  try {
+    if (simpleUser.value && isRegistered.value) {
+      console.log('MWI subscription active')
+    }
+  } catch (err) {
+    console.error('Error subscribing to MWI:', err)
+  }
+}
+
   return {
     // State
     simpleUser,
@@ -442,5 +499,6 @@ export const useSipStore = defineStore('sip', () => {
     reinitializeWithExtension,
     loadSipConfigFromStorage,
     saveSipConfigToStorage,
+    subscribeMWI
   }
 })

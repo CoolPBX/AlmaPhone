@@ -36,6 +36,7 @@ export default {
     advacedOptions: 'Advanced Options',
     loggingOut: 'Logging out...',
     logOut: 'Log Out',
+
   },
 
   // Extension Selector
@@ -67,6 +68,7 @@ export default {
     contacts: 'Contacts',
     history: 'History',
     settings: 'Settings',
+    incomingCall: 'Incoming Call',
   },
 
     phoneView: {
