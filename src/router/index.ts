@@ -14,7 +14,7 @@ const routeConfigs: RouteConfig[] = [
     name: 'login',
     title: 'Login',
   }),
-  createProtectedRoute('/phone', () => import('@/views/PhoneView.vue'), {
+  createProtectedRoute('/phone', () => import('@/components/phone/PhoneView.vue'), {
     name: 'phone',
     title: 'Phone',
     requiresExtension: true,

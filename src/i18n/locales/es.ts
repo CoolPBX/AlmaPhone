@@ -67,6 +67,7 @@ export default {
     contacts: 'Contactos',
     history: 'Historial',
     settings: 'Configuración',
+    incomingCall: 'Llamada entrante',
   },
 
   // Errors
@@ -82,7 +83,7 @@ export default {
 
   phoneView: {
     recentCalls: 'Llamadas Recientes',
-    callTo: 'Llamando a: ',
+    callTo: 'Llamando',
     redial: 'Repetir',
     dnd: 'No Molestar',
     dndOn: 'DND ACTIVADO',
