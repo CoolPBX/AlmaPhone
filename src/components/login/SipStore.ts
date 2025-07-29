@@ -7,6 +7,7 @@ import {
   type SimpleUserOptions,
 } from 'sip.js/lib/platform/web'
 import { ref } from 'vue'
+import type { BlfItemDto } from '../blf/domain/shemas/BlfsShemas'
 
 export const useSipStore = defineStore('sip', () => {
   const simpleUser = ref<SimpleUser | null>(null)
@@ -19,6 +20,7 @@ export const useSipStore = defineStore('sip', () => {
   const connectionState = ref<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>(
     'disconnected',
   )
+  const blfExtensions = ref<BlfItemDto[]>([]);
   const callStartTime = ref<Date | null>(null)
   const error = ref<string | null>(null)
   const isMuted = ref(false)
@@ -455,14 +457,70 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const subscribeMWI = async (): Promise<void> => {
-  try {
-    if (simpleUser.value && isRegistered.value) {
-      console.log('MWI subscription active')
+    try {
+      if (simpleUser.value && isRegistered.value) {
+        console.log('MWI subscription active')
+      }
+    } catch (err) {
+      console.error('Error subscribing to MWI:', err)
     }
-  } catch (err) {
-    console.error('Error subscribing to MWI:', err)
   }
-}
+
+  const addBlfExtension = (extension: string, label: string): void => {
+    const newBlf: BlfItemDto = {
+      id: Date.now().toString(),
+      extension,
+      label,
+      status: 'idle',
+    }
+    blfExtensions.value?.push(newBlf)
+    saveBlfExtensionsToStorage()
+    addActivityLog(`BLF agregado: ${label} (${extension})`)
+  }
+
+  const removeBlfExtension = (id: string): void => {
+    const index = blfExtensions.value?.findIndex((blf) => blf.id === id)
+    if (index !== -1) {
+      const blf = blfExtensions.value[index]
+      blfExtensions.value?.splice(index !== undefined ? index : -1, 1)
+      saveBlfExtensionsToStorage()
+      addActivityLog(`BLF eliminado: ${blf?.label} (${blf?.extension})`)
+    }
+  }
+
+  const updateBlfStatus = (extension: string, status: BlfItemDto['status']): void => {
+    const blf = blfExtensions.value?.find((b) => b.extension === extension)
+    if (blf) {
+      blf.status = status
+    }
+  }
+
+  const loadBlfExtensionsFromStorage = (): void => {
+    const saved = localStorage.getItem('blfExtensions')
+    if (saved) {
+      try {
+        blfExtensions.value = JSON.parse(saved)
+      } catch (error) {
+        console.error('Error loading BLF extensions from storage:', error)
+        blfExtensions.value = []
+      }
+    }
+  }
+
+  const saveBlfExtensionsToStorage = (): void => {
+    localStorage.setItem('blfExtensions', JSON.stringify(blfExtensions.value))
+  }
+
+  // Función para realizar llamada a extensión BLF
+  const callBlfExtension = async (extension: string): Promise<boolean> => {
+    return await makeCall(extension)
+  }
+
+  // Agregar una función de log de actividad (si no existe)
+  const addActivityLog = (message: string): void => {
+    console.log(`[SIP] ${message}`)
+    // Si tienes un sistema de logs en el store, agrégalo aquí
+  }
 
   return {
     // State
@@ -479,6 +537,7 @@ export const useSipStore = defineStore('sip', () => {
     callStartTime,
     isMuted,
     isOnHold,
+    blfExtensions,
 
     // Actions
     initializeSip,
@@ -499,6 +558,12 @@ export const useSipStore = defineStore('sip', () => {
     reinitializeWithExtension,
     loadSipConfigFromStorage,
     saveSipConfigToStorage,
-    subscribeMWI
+    subscribeMWI,
+    addBlfExtension,
+    removeBlfExtension, 
+    updateBlfStatus,
+    loadBlfExtensionsFromStorage,
+    saveBlfExtensionsToStorage,
+    callBlfExtension,
   }
 })

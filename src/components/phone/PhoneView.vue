@@ -229,21 +229,6 @@
         {{ t('phoneView.controlPanel') }}
       </h3>
 
-      <div class="mb-6">
-        <div
-          class="bg-red-50 dark:bg-red-900 rounded-lg p-4 border border-red-200 dark:border-red-700"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span class="text-sm font-medium text-red-900 dark:text-red-100">
-                Sara: Unregistered
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="grid grid-cols-2 gap-3 mb-6">
         <button
           @click="redial"
@@ -336,6 +321,85 @@
           }}</span>
         </button>
       </div>
+
+      <div class="mb-6 mt-8">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+            {{ t('phoneView.blfMonitor') }}
+          </h4>
+          <button
+            @click="showBlfModal = true"
+            class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow transition-colors"
+          >
+            {{ t('phoneView.manageBLF') }}
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div
+            v-for="blf in phoneStore.blfExtensions"
+            :key="blf.id"
+            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div :class="getBlfStatusClass(blf.status)" class="w-3 h-3 rounded-full"></div>
+                <div>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ blf.label }}
+                  </span>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ blf.extension }}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button
+                  @click="callBlfExtension(blf.extension)"
+                  :disabled="isCallActive"
+                  class="p-2 bg-green-500 hover:bg-green-600 disabled:text-gray-400 text-sm font-medium disabled:cursor-not-allowed"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  @click="removeBlf(blf.id as string)"
+                  class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                  :title="t('phoneView.remove')"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="phoneStore.blfExtensions.length === 0"
+            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
+          >
+            <div class="flex items-center justify-center space-x-3">
+              <div class="w-3 h-3 bg-gray-500 rounded-full"></div>
+              <span class="text-sm text-gray-500 dark:text-gray-400">
+                {{ t('phoneView.noBLFsConfigured') }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -419,6 +483,12 @@
         </div>
       </div>
     </div>
+    <BlfModal
+      :is-open="showBlfModal"
+      :is-call-active="isCallActive"
+      @close="showBlfModal = false"
+      @call="handleBlfCall"
+    />
   </div>
 </template>
 
@@ -428,6 +498,7 @@ import { useExtensionStore } from '@/components/extension-selector/ExtensionStor
 import { useSipStore } from '@/components/login/SipStore'
 import { RotateCcw, BellOff, Voicemail, Mic, PhoneOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import BlfModal from '../blf/BlfModal.vue'
 
 const { t } = useI18n()
 
@@ -486,9 +557,11 @@ const dialSounds: Record<
   '#': new Audio(new URL('@/assets/wav/hash.wav', import.meta.url).href),
 }
 
+const showBlfModal = ref(false)
+
 ringTone.value = new Audio(new URL('@/assets/ring.mp3', import.meta.url).href)
 {
-  if(ringTone.value) {
+  if (ringTone.value) {
     ringTone.value.loop = true
     ringTone.value.volume = 0.5
   }
@@ -550,7 +623,7 @@ const callButtonClass = computed(() => {
 const startRinging = () => {
   if (ringTone.value && !phoneStore.isDnd) {
     ringTone.value.currentTime = 0
-    ringTone.value.play().catch(error => {
+    ringTone.value.play().catch((error) => {
       console.error('Error playing ringtone:', error)
     })
   }
@@ -563,8 +636,18 @@ const stopRinging = () => {
   }
 }
 
-
 const handleKeyDown = (event: KeyboardEvent) => {
+  if (showBlfModal.value) return
+
+  const activeElement = document.activeElement
+  if (activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName)) {
+    return
+  }
+
+  if (document.querySelector('[role="dialog"]') || document.querySelector('.modal-overlay')) {
+    return
+  }
+
   if (isCallActive.value) return
 
   const key = event.key
@@ -715,7 +798,6 @@ const answerCall = async () => {
 
     await phoneStore.answerCall()
 
-
     currentCallNumber.value = 'Llamada entrante'
     callStartTime.value = new Date()
     startCallTimer()
@@ -810,8 +892,7 @@ const toggleDnd = () => {
 
 const checkVoicemail = async () => {
   try {
-    // Marcar extensión para mensajes de voz (usualmente *97 o *98)
-    const vmNumber = '*98' // Cambia según tu configuración
+    const vmNumber = '*98'
     displayNumber.value = vmNumber
     await handleCall()
     addActivityLog('Accediendo a mensajes de voz')
@@ -864,6 +945,33 @@ const loadAudioInputDevices = async () => {
   }
 }
 
+const getBlfStatusClass = (status: string) => {
+  const statusClasses = {
+    idle: 'bg-green-500',
+    busy: 'bg-red-500',
+    ringing: 'bg-yellow-500 animate-pulse',
+    unavailable: 'bg-gray-500',
+  }
+  return statusClasses[status as keyof typeof statusClasses] || 'bg-gray-500'
+}
+
+const removeBlf = (blfId: string) => {
+  phoneStore.removeBlfExtension(blfId)
+  addActivityLog(`BLF eliminado: ${blfId}`)
+}
+
+const callBlfExtension = async (extension: string) => {
+  if (!isCallActive.value) {
+    displayNumber.value = extension
+    await handleCall()
+  }
+}
+
+const handleBlfCall = (extension: string) => {
+  displayNumber.value = extension
+  handleCall()
+}
+
 watch(
   () => phoneStore.callState,
   (newState, oldState) => {
@@ -871,18 +979,19 @@ watch(
       stopCallTimer()
       currentCallNumber.value = ''
       callStartTime.value = null
-      stopRinging() 
+      stopRinging()
     }
-    
+
     if (newState === 'ringing' && oldState !== 'ringing') {
       startRinging()
-      addActivityLog('Llamada entrante - Timbre iniciado')
+      addActivityLog('Call ringing...')
     }
   },
 )
 
 onMounted(async () => {
   phoneStore.loadSipConfigFromStorage()
+  phoneStore.loadBlfExtensionsFromStorage()
 
   isDnd.value = phoneStore.isDnd
   isAutoAnswer.value = phoneStore.isAutoAnswer
@@ -915,7 +1024,6 @@ watch(displayNumber, () => {
     }
   })
 })
-
 </script>
 
 <style scoped>
