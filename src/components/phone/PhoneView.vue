@@ -794,7 +794,6 @@ const endCall = async () => {
 const answerCall = async () => {
   try {
     stopRinging()
-    console.log('Contestando llamada entrante...')
 
     await phoneStore.answerCall()
 
@@ -905,6 +904,7 @@ const checkVoicemail = async () => {
 const toggleAutoAnswer = () => {
   isAutoAnswer.value = !isAutoAnswer.value
   phoneStore.isAutoAnswer = isAutoAnswer.value
+  stopRinging()
   addActivityLog(`AutoAnswer ${isAutoAnswer.value ? 'activado' : 'desactivado'}`)
 }
 
