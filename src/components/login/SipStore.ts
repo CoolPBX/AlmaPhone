@@ -5,6 +5,9 @@ import { type SimpleUserDelegate, type SimpleUserOptions } from 'sip.js/lib/plat
 import { ref } from 'vue'
 import type { BlfItemDto } from '../blf/domain/shemas/BlfsShemas'
 import { SimpleUser } from '@/core/simple-user'
+import type { Subscription } from 'sip.js/lib/api/subscription'
+import type { OutgoingSubscribeRequestDelegate } from 'sip.js/lib/core/messages/methods/subscribe'
+import type { OutgoingRequestMessageOptions } from 'sip.js/lib/core/messages/outgoing-request-message'
 
 export const useSipStore = defineStore('sip', () => {
   const simpleUser = ref<SimpleUser | null>(null)
@@ -24,7 +27,12 @@ export const useSipStore = defineStore('sip', () => {
   const isOnHold = ref(false)
   const toast = useToast()
 
-  const blfSubscriptions = ref<Map<string, any>>(new Map())
+  interface BlfSubscription {
+    subscription: Subscription
+    timer?: number
+  }
+
+  const blfSubscriptions = ref<Map<string, BlfSubscription>>(new Map())
 
   const audioElement = ref<HTMLAudioElement | null>(null)
 
@@ -44,48 +52,65 @@ export const useSipStore = defineStore('sip', () => {
       }
 
       const userAgentCore = simpleUser.value.getSessionManager().userAgent.userAgentCore
-      const targetURI = new URI('sip', sipConfig.value.username, sipConfig.value.domain)
 
-      // Crear el request SUBSCRIBE
+      const targetURI = new URI('sip', extension, sipConfig.value.domain)
+      const fromURI = new URI('sip', sipConfig.value.username, sipConfig.value.domain)
+      const toURI = targetURI.clone()
+
+      // Opciones del mensaje
+      const options: OutgoingRequestMessageOptions = {
+        cseq: 1,
+        callId: userAgentCore.configuration.sipjsId, 
+        fromTag: userAgentCore.configuration.sipjsId, 
+        fromDisplayName: sipConfig.value.displayName,
+        toDisplayName: extension,
+        routeSet: [], 
+      }
+
+      // Headers adicionales
+      const extraHeaders = [
+        `Event: dialog`,
+        `Accept: application/dialog-info+xml`,
+        `Expires: 3600`,
+        `Contact: <sip:${sipConfig.value.username}@${sipConfig.value.domain};transport=ws>`,
+      ]
+
       const subscribeRequest = userAgentCore.makeOutgoingRequestMessage(
         'SUBSCRIBE',
         targetURI,
-        sipConfig.value.server,
-        sipConfig.value.server,
-        {
-          Event: 'dialog',
-          Accept: 'application/dialog-info+xml',
-          Contact: `<sip:${sipConfig.value.username}@${sipConfig.value.domain};transport=ws>`,
-          Expires: '3600',
-        },
+        fromURI,
+        toURI, 
+        options, 
+        extraHeaders,
       )
 
-      // Crear delegado para manejar las respuestas
-      const subscribeDelegate = {
-        onAccept: (response: any) => {
-          console.log(`BLF subscription accepted for ${extension}`, response)
+      const delegate: OutgoingSubscribeRequestDelegate = {
+        onAccept: (response) => {
+          console.log(`Suscripción BLF aceptada para ${extension}`, response)
         },
-        onReject: (response: any) => {
-          console.log(`BLF subscription rejected for ${extension}`, response)
+        onReject: (response) => {
+          console.error(`Suscripción BLF rechazada para ${extension}`, response)
           updateBlfStatus(extension, 'unavailable')
         },
-        onNotify: (notification: any) => {
-          console.log(`BLF notification for ${extension}`, notification)
+        onNotify: (notification) => {
           parseBlfNotification(extension, notification)
         },
       }
 
-      // Realizar la suscripción
-      const subscription = userAgentCore.subscribe(subscribeRequest, subscribeDelegate)
-      blfSubscriptions.value.set(extension, subscription)
+      const subscription = userAgentCore.subscribe(subscribeRequest, delegate)
 
-      console.log(`Subscribed to BLF status for extension ${extension}`)
+      // Guardar la suscripción
+      blfSubscriptions.value.set(extension, {
+        state: 'active',
+        ...subscription,
+      })
+
+      console.log(`Suscripción BLF creada para ${extension}`)
     } catch (error) {
-      console.error(`Error subscribing to BLF for ${extension}:`, error)
+      console.error(`Error en suscripción BLF para ${extension}:`, error)
       updateBlfStatus(extension, 'unavailable')
     }
   }
-
   const unsubscribeFromBlfStatus = async (extension: string): Promise<void> => {
     try {
       const subscription = blfSubscriptions.value.get(extension)
