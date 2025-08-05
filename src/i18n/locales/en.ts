@@ -101,7 +101,17 @@ export default {
     sipUnregistered: 'Sara: Unregistered',
     enternumber: 'Enter a number',
     controlPanel: 'Control Panel',
+    blfMonitor: 'BLFs Monitor',
+    manageBLF: 'Manage BLFs',
+    noBLFsConfigured: 'No BLFs configured',
+    available: 'Available',
+    busy: 'Busy',
+    ringing: 'Ringing',
+    unavailable: 'Unavailable',
+    unknown: 'Unknown',
+    addNewBLF: 'Add New BLFs',
   },
+
 
   // Errors
   errors: {
