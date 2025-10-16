@@ -7,7 +7,8 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/components/login/AuthStore'
-import i18n from './i18n'
+import { createI18n } from 'vue-i18n'
+import messages from '@intlify/unplugin-vue-i18n/messages'
 import ToastService from 'primevue/toastservice'
 import Toast from 'primevue/toast'
 
@@ -23,6 +24,12 @@ app.use(ToastService)
 app.component('AppToast', Toast)
 
 useAuthStore()
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'en',
+  messages,
+})
 
 app.use(router)
 app.use(i18n)

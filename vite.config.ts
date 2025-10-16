@@ -2,12 +2,16 @@ import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     tailwindcss(), 
-    vue()
+    vue(),
+    VueI18nPlugin({
+      include: [path.resolve(__dirname, './src/i18n/locales/**')],
+    }),
   ],
   resolve: {
     alias: {
