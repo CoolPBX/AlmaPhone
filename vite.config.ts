@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({

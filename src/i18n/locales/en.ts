@@ -77,7 +77,7 @@ export default {
     redial: 'Redial',
     dnd: 'DND',
     dndOn: 'DND ON',
-    voicemail: 'VoiceMail: {{new}}/{{old}}',
+    // voicemail: 'VoiceMail: {{new}}/{{old}}',
     mic: 'MIC',
     micOn: 'MIC ON',
     mute: 'MUTE',
