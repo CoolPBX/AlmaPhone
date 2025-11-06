@@ -102,10 +102,13 @@ export const useExtensionStore = defineStore(
         await sipStore.disconnect()
       }
 
+      const displayName = extension.effective_caller_id_name || extension.extension
+
       const success = await sipStore.initializeSip({
         username: extension.extension,
         password: extension.password,
-        displayName: 'LDLQ2',
+        domain: extension.domain_name,
+        displayName: displayName,
       })
 
       if (success) {

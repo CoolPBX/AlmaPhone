@@ -28,11 +28,11 @@ export const useSipStore = defineStore('sip', () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: 'wss://hornblower.doesntexist.org:7443',
+    server: 'wss://coolpbx2.hornblower.com:7443',
     username: '',
     password: '',
-    domain: 'hornblower.doesntexist.org',
-    displayName: 'LDLQ2',
+    domain: 'coolpbx2.hornblower.com',
+    displayName: '',
   })
 
   const createSimpleUserDelegate = (): SimpleUserDelegate => ({
@@ -146,7 +146,7 @@ export const useSipStore = defineStore('sip', () => {
       server?: string
       username: string
       password: string
-      domain?: string
+      domain: string
       displayName: string
     },
     remoteAudio?: HTMLAudioElement,
@@ -156,8 +156,8 @@ export const useSipStore = defineStore('sip', () => {
         server: config.server || sipConfig.value.server,
         username: config.username,
         password: config.password,
-        domain: config.domain || sipConfig.value.domain,
-        displayName: config.displayName || sipConfig.value.displayName,
+        domain: config.domain,
+        displayName: config.displayName,
       }
 
       sipConfig.value = { ...sipConfig.value, ...finalConfig }
@@ -366,18 +366,10 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const updateAdvancedConfig = (config: {
-    domain?: string
     server?: string
-    displayName?: string
   }): void => {
-    if (config.domain) {
-      sipConfig.value.domain = config.domain
-    }
     if (config.server) {
       sipConfig.value.server = config.server
-    }
-    if (config.displayName) {
-      sipConfig.value.displayName = config.displayName
     }
   }
 
@@ -386,7 +378,7 @@ export const useSipStore = defineStore('sip', () => {
     username: string
     password: string
     displayName: string
-    domain?: string
+    domain: string
   }): Promise<boolean> => {
     try {
       if (simpleUser.value && isConnected.value) {

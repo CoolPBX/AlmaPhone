@@ -65,7 +65,6 @@ import ExtensionSelector from '@/components/extension-selector/ExtensionSelector
 import { useSipStore } from './SipStore'
 import { useExtensionStore } from '../extension-selector/ExtensionStore'
 import AdvancedOptionsModal from './AdvancedOptionsModal.vue'
-// import LanguageSwitcher from '@/core/presentation/components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -109,7 +108,8 @@ const onExtensionSelected = async () => {
   await sipStore.initializeSip({
     username: extensionStore.selectedExtension?.extension || '',
     password: extensionStore.selectedExtension?.password || '',
-    displayName: 'LDLQ2',
+    domain: extensionStore.selectedExtension?.domain_name || '',
+    displayName: '',
   })
   console.log('Extension selected:', extensionStore.selectedExtension?.password);
   
