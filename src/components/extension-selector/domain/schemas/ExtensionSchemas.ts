@@ -10,9 +10,11 @@ export const ExtensionItemSchema = z.object({
   extension_uuid: z.string().uuid('Invalid extension UUID'),
   domain_uuid: z.string().uuid('Invalid domain UUID'),
   extension: z.string().min(1, 'Extension is required'),
+  domain_name: z.string().min(1, 'Domain name is required'),
   password: z.string().min(1, 'Password is required'),
   effective_caller_id_name: z.string().nullable(),
   description: z.string().nullable(),
+  full_name: z.string().nullable(),
   enabled: z.boolean().optional(),
 })
 

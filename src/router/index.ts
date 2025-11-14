@@ -46,7 +46,6 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
   const extensionStore = useExtensionStore()
 
-  // Restore session if needed
   if (!authStore.user && !authStore.isAuthenticated) {
     authStore.restoreSession()
   }

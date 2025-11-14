@@ -87,7 +87,7 @@ export default {
     redial: 'Repetir',
     dnd: 'No Molestar',
     dndOn: 'DND ACTIVADO',
-    voicemail: 'Mensajes de Voz: {{new}}/{{old}}',
+    // voicemail: 'Mensajes de Voz: {{new}}/{{old}}',
     mic: 'Micrófono',
     micOn: 'MIC ACTIVADO',
     mute: 'Silenciar',

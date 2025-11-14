@@ -9,16 +9,6 @@
       <div class="grid grid-cols-1 gap-6">
         <FloatLabel>
           <InputText
-            id="sipDomain"
-            v-model="form.sipDomain"
-            class="w-full"
-            :invalid="!isValidDomain(form.sipDomain)"
-          />
-          <label for="sipDomain">SIP Domain Name</label>
-        </FloatLabel>
-
-        <FloatLabel>
-          <InputText
             id="wssProxy"
             v-model="form.wssProxy"
             class="w-full"
@@ -37,15 +27,6 @@
             :invalid="!isValidPort(form.wssPort)"
           />
           <label for="wssPort">WSS Proxy Port</label>
-        </FloatLabel>
-
-        <FloatLabel>
-          <InputText
-            id="displayName"
-            v-model="form.displayName"
-            class="w-full"
-          />
-          <label for="displayName">Display Name</label>
         </FloatLabel>
       </div>
 
@@ -102,21 +83,10 @@ const sipStore = useSipStore()
 const error = ref<string | null>(null)
 const { t } = useI18n()
 
-
-
 const form = ref({
-  sipDomain: sipStore.sipConfig.domain,
   wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
-  displayName: sipStore.sipConfig.displayName
+  wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
 })
-
-
-const isValidDomain = (domain: string): boolean => {
-  if (!domain) return false
-  const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?)*$/
-  return domainRegex.test(domain)
-}
 
 const isValidHost = (host: string): boolean => {
   if (!host) return false
@@ -131,7 +101,6 @@ const isValidPort = (port: number | null): boolean => {
 
 const isFormValid = computed(() => {
   return (
-    isValidDomain(form.value.sipDomain) &&
     isValidHost(form.value.wssProxy) &&
     isValidPort(form.value.wssPort)
   )
@@ -145,9 +114,7 @@ const handleSave = () => {
 
   try {
     sipStore.updateAdvancedConfig({
-      domain: form.value.sipDomain,
-      server: `wss://${form.value.wssProxy}:${form.value.wssPort}`,
-      displayName: form.value.displayName
+      server: `wss://${form.value.wssProxy}:${form.value.wssPort}`
     })
     
     emit('saved')
@@ -159,10 +126,8 @@ const handleSave = () => {
 
 const handleCancel = () => {
   form.value = {
-    sipDomain: sipStore.sipConfig.domain,
     wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
-    displayName: sipStore.sipConfig.displayName
+    wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
   }
   error.value = null
   emit('close')
@@ -171,10 +136,8 @@ const handleCancel = () => {
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
     form.value = {
-      sipDomain: sipStore.sipConfig.domain,
       wssProxy: sipStore.sipConfig.server.replace(/^wss:\/\//, '').replace(/:\d+$/, ''),
-      wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, '')),
-      displayName: sipStore.sipConfig.displayName
+      wssPort: parseInt(sipStore.sipConfig.server.replace(/^wss:\/\/.*:/, ''))
     }
     error.value = null
   }
