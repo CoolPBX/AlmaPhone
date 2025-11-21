@@ -331,13 +331,14 @@
             {{ authStore.isLoading ? t('auth.loggingOut') : t('auth.logOut') }}
           </button>
         </div>
+
       </div>
 
     </div>
 
     <div
       class="dynamic-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Información</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">{{ t('phoneView.info') }}</h3>
 
       <div class="mb-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
@@ -346,19 +347,19 @@
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <div class="space-y-2">
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">SIP:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.sip') }}:</span>
               <span :class="connectionStatusTextClass" class="text-sm font-medium">
                 {{ connectionStatus }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Estado:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.status') }}:</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.connectionState }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Llamada:</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.call') }}:</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.callState }}
               </span>
@@ -401,7 +402,7 @@
         </div>
       </div>
 
-      <div>
+      <div class="mb-6">
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
           {{ t('phoneView.controls') }}
         </h4>
@@ -414,7 +415,15 @@
           </div>
         </div>
       </div>
+
+      <div>
+        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">{{ t('phoneView.agentPanel') }}</h4>
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('phoneView.tbd') }}</p>
+        </div>
+      </div>
     </div>
+
   </div>
 </template>
 

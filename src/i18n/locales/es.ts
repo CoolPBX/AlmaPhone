@@ -111,6 +111,9 @@ export default {
     controls: 'Controles',
     sipUnregistered: 'Sara: No registrado',
     controlPanel: 'Panel de Control',
+    sip: 'SIP',
+    agentPanel: 'Agente',
+    tbd: 'TBD',
   },
 
   // Success messages

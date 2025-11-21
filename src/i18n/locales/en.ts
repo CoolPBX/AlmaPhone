@@ -100,6 +100,9 @@ export default {
     sipUnregistered: 'Sara: Unregistered',
     enternumber: 'Enter a number',
     controlPanel: 'Control Panel',
+    sip: 'SIP',
+    agentPanel: 'Agent',
+    tbd: 'TBD',
   },
 
   // Errors
