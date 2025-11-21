@@ -121,4 +121,25 @@ export default {
     updated: 'Actualizado exitosamente',
     deleted: 'Eliminado exitosamente',
   },
+
+  callCenteragent: {
+    checkingCallCenter: 'Verificando call center...',
+    callCenterAgent: 'Agente de Call Center',
+    belongsToCallCenter: 'Pertenece al call center',
+    currentStatus: 'Estado actual',
+  },
+
+  agent: {
+    title: 'Estado de Agente',
+    changeStatus: 'Cambiar disponibilidad',
+    currentStatus: 'Estado actual',
+    updating: 'Actualizando...',
+    type: 'Tipo',
+    timeout: 'Timeout',
+    statuses: {
+      available: 'Disponible',
+      on_break: 'En descanso',
+      logged_out: 'Desconectado',
+    },
+  },
 }

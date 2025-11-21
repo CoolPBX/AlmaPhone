@@ -3,27 +3,84 @@
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
     <h1 class="text-2xl font-semibold text-gray-900 dark:text-white"> AlmaPhone</h1>
     <div class="flex items-center justify-between">
+
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-2">
-          <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+          <div :class="connectionStatusClass" class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
         </div>
-        <div class="text-gray-600 dark:text-gray-400">
-          <span class="text-sm">Usuario:</span>
-          <span class="ml-2 font-medium text-gray-900 dark:text-white">
+
+        <div class="flex items-center space-x-3">
+          <span class="font-medium text-gray-900 dark:text-white">
             {{ authStore.userEmail }}
           </span>
-        </div>
-      </div>
 
-      <div class="text-gray-600 dark:text-gray-400">
-        <span class="text-sm">Extensión:</span>
-        <Dropdown v-if="extensionStore.availableExtensions.length > 1" v-model="selectedExtensionValue"
-          :options="extensionStore.availableExtensions.map((e) => ({ id: e.extension_uuid, name: e.extension }))"
-          option-label="name" option-value="id" @change="handleExtensionChange" class="ml-2"
-          :loading="extensionStore.isLoading" />
-        <span v-else class="ml-2 font-medium text-gray-900 dark:text-white">
-          {{ extensionStore.selectedExtension?.extension || 'Sin extensión' }}
-        </span>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">•</span>
+            <Select v-if="extensionStore.availableExtensions.length > 1" v-model="selectedExtensionValue"
+              :options="extensionStore.availableExtensions" optionLabel="extension" optionValue="extension_uuid"
+              @change="handleExtensionChange" :loading="extensionStore.isLoading" checkmark :highlightOnSelect="false"
+              placeholder="Ext" class="custom-extension-select" :pt="{
+                root: { class: 'relative inline-flex bg-transparent' },
+                label: { class: 'flex-1 bg-transparent' }
+              }">
+              <template #value="slotProps">
+                <div v-if="slotProps.value" class="flex items-center space-x-2">
+                  <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span class="font-semibold">
+                    {{extensionStore.availableExtensions.find(e => e.extension_uuid === slotProps.value)?.extension}}
+                  </span>
+                </div>
+                <span v-else class="text-gray-400">{{ slotProps.placeholder }}</span>
+              </template>
+
+              <template #option="slotProps">
+                <div class="flex items-center justify-between w-full py-1">
+                  <div class="flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span class="font-medium">{{ slotProps.option.extension }}</span>
+                  </div>
+                </div>
+              </template>
+
+              <template #dropdownicon>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </template>
+            </Select>
+
+            <span v-else class="text-sm font-medium  dark:text-white flex items-center space-x-2">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span>{{ extensionStore.selectedExtension?.extension || 'Sin extensión' }}</span>
+            </span>
+          </div>
+
+          <div v-if="agentName" class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">•</span>
+            <div
+              class="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+              <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span class="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {{ agentName }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="flex items-center space-x-4">
@@ -53,18 +110,20 @@
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/components/login/AuthStore'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
-import { computed, onMounted } from 'vue'
-import Dropdown from 'primevue/dropdown'
+import { computed, onMounted, watch } from 'vue'
+import Select from 'primevue/select'
 import { useSipStore } from '@/components/login/SipStore'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
+import { useAgentStore } from '@/components/agent/AgentStore'
 
 
 const router = useRouter()
 const authStore = useAuthStore()
 const extensionStore = useExtensionStore()
 const sipStore = useSipStore()
+const agentStore = useAgentStore()
 const toast = useToast()
 const { t } = useI18n()
 
@@ -81,6 +140,8 @@ const handleLogout = async () => {
   }
 }
 
+const agentName = computed(() => agentStore.agentInfo?.agent_name || null)
+
 const selectedExtensionValue = computed({
   get: () => extensionStore.selectedExtension?.extension_uuid || null,
   set: (value) => {
@@ -90,6 +151,11 @@ const selectedExtensionValue = computed({
     }
   }
 })
+
+const connectionStatusClass = computed(() => {
+  return sipStore.isRegistered ? 'bg-green-500' : 'bg-red-500'
+})
+
 
 const handleExtensionChange = async (event: { value: string }) => {
   const extensionId = event.value
@@ -120,6 +186,18 @@ onMounted(async () => {
   extensionStore.restoreSelectedExtension()
 })
 
+watch(
+  () => extensionStore.selectedExtension?.extension,
+  async (newExtension) => {
+    if (newExtension) {
+      await agentStore.checkAgentStatus(newExtension)
+    } else {
+      agentStore.clearAgent()
+    }
+  },
+  { immediate: true }
+)
+
 </script>
 
 <style scoped>
@@ -127,5 +205,28 @@ onMounted(async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+:deep(.custom-extension-select) {
+  background: transparent !important;
+}
+
+:deep(.custom-extension-select .p-select) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+:deep(.custom-extension-select .p-component) {
+  background: transparent !important;
+}
+
+:deep(.p-select-label-container) {
+  background: transparent !important;
+}
+
+:deep(.p-inputwrapper) {
+  background: transparent !important;
 }
 </style>
