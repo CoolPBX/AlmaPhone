@@ -52,7 +52,7 @@
                   <div
                     class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
                     <span class="text-xs font-bold">{{ agentStore.agentInfo.agent_name.substring(0, 2).toUpperCase()
-                      }}</span>
+                    }}</span>
                   </div>
 
                   <div class="flex flex-col items-start">
@@ -278,7 +278,7 @@
               <Mic :size="20" />
               <span class="text-xs">{{
                 t(showAdvancedDialOptions ? 'phoneView.micOn' : 'phoneView.mic')
-                }}</span>
+              }}</span>
             </button>
 
             <div v-show="showAdvancedDialOptions"
@@ -301,14 +301,34 @@
           <div v-if="showAdvancedDialOptions" @click="showAdvancedDialOptions = false" class="fixed inset-0 z-40"></div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3">
+        <div class="grid grid-cols-1 gap-3 mb-6">
           <button @click="toggleAutoAnswer"
             :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'" :disabled="isCallActive"
             class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
             <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
             <span class="text-xs">{{
               t(isAutoAnswer ? 'phoneView.autoAnswerOn' : 'phoneView.autoAnswer')
-              }}</span>
+            }}</span>
+          </button>
+        </div>
+
+        <div class="border-t border-gray-200 dark:border-gray-700 my-6"></div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <button @click="handleLogout" :disabled="authStore.isLoading"
+            class="w-full justify-center inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
+            <svg v-if="authStore.isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            {{ authStore.isLoading ? t('auth.loggingOut') : t('auth.logOut') }}
           </button>
         </div>
       </div>
@@ -356,7 +376,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.server')
-                }}</span>
+              }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.server }}
               </span>
@@ -364,7 +384,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.user')
-                }}</span>
+              }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.username }}
               </span>
@@ -372,7 +392,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.domain')
-                }}</span>
+              }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.domain }}
               </span>
@@ -402,15 +422,18 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
 import { useSipStore } from '@/components/login/SipStore'
+import { useAuthStore } from '../login/AuthStore'
 import { RotateCcw, BellOff, Voicemail, Mic, PhoneOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAgentStore } from '../agent/AgentStore'
+import router from '@/router'
 
 const { t } = useI18n()
 
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 const agentStore = useAgentStore()
+const authStore = useAuthStore()
 const isStatusMenuOpen = ref(false)
 
 const displayNumber = ref('')
@@ -939,6 +962,19 @@ watch(displayNumber, () => {
     }
   })
 })
+
+const handleLogout = async () => {
+  try {
+    if (phoneStore.isConnected) {
+      await phoneStore.disconnect()
+    }
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Error during logout:', error)
+  }
+}
+
 
 </script>
 
