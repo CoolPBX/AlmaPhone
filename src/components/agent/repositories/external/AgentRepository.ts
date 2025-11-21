@@ -46,7 +46,7 @@ export class AgentRepository implements AgentRepositoryContract {
     ChangeAgentStatusRequestSchema.parse(request)
 
     try {
-      const response = await axios.post(
+      const response = await axios.patch(
         `${this.baseUrl}/my/agents/status`,
         {
           agent_name: request.agent_name,

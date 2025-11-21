@@ -18,7 +18,7 @@ export const useAgentStore = defineStore('agent', () => {
 
   const isAgent = computed(() => agentInfo.value !== null)
   const currentStatus = computed(() => agentInfo.value?.agent_status || null)
-  const availableStatuses = ref<string[]>(['Available', 'On Break', 'Logged Out'])
+  const availableStatuses = ref<string[]>(['Available', 'available_on_demand','On Break', 'Logged Out'])
 
   const checkAgentStatus = async (extension: string): Promise<boolean> => {
     const authStore = useAuthStore()

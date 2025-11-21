@@ -21,7 +21,6 @@ export const AgentListResponseSchema = z.object({
   data: z.array(AgentItemSchema),
 })
 
-// Request schemas
 export const CheckAgentRequestSchema = z.object({
   token: z.string().min(1, 'Token is required'),
 })
@@ -32,7 +31,6 @@ export const ChangeAgentStatusRequestSchema = z.object({
   status: z.string().min(1, 'Status is required'),
 })
 
-// Type inference
 export type AgentItemDto = z.infer<typeof AgentItemSchema>
 export type AgentListResponseDto = z.infer<typeof AgentListResponseSchema>
 export type CheckAgentRequestDto = z.infer<typeof CheckAgentRequestSchema>

@@ -3,18 +3,106 @@
     <div
       class="phone-dialer bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 w-[320px] flex-shrink-0">
       <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <!-- <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ extensionStore.selectedExtension?.extension }} ({{
               phoneStore.sipConfig.displayName
             }})
-          </h3>
-          <div class="flex items-center space-x-2">
-            <div :class="connectionStatusClass" class="w-3 h-3 rounded-full"></div>
-            <span class="text-sm font-medium" :class="connectionStatusTextClass">
-              {{ connectionStatus }}
-            </span>
+          </h3> -->
+        <div v-if="agentStore.isAgent && agentStore.agentInfo" class="mb-4 relative z-20">
+
+          <div class="relative w-full h-[60px]">
+            <transition mode="out-in" enter-active-class="transition duration-200 ease-out"
+              enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1">
+              <div v-if="agentStore.error" key="error-state"
+                class="absolute inset-0 w-full h-full flex items-center justify-between px-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl shadow-sm">
+                <div class="flex items-center gap-3 overflow-hidden">
+                  <div class="flex-shrink-0 text-red-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-red-500 uppercase tracking-wide">Error</span>
+                    <span class="text-xs text-red-700 dark:text-red-300 font-medium truncate max-w-[180px]"
+                      :title="agentStore.error">
+                      {{ agentStore.error }}
+                    </span>
+                  </div>
+                </div>
+
+                <button @click="agentStore.clearError"
+                  class="p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-800 text-red-500 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <button v-else key="normal-state" @click="toggleStatusMenu" :disabled="agentStore.isLoading"
+                class="absolute inset-0 w-full h-full flex items-center justify-between px-3 rounded-xl border transition-all duration-200 group"
+                :class="[
+                  isStatusMenuOpen
+                    ? 'bg-white dark:bg-gray-800 border-blue-500 shadow-md ring-1 ring-blue-500'
+                    : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700'
+                ]">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
+                    <span class="text-xs font-bold">{{ agentStore.agentInfo.agent_name.substring(0, 2).toUpperCase()
+                      }}</span>
+                  </div>
+
+                  <div class="flex flex-col items-start">
+                    <span
+                      class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">Agente</span>
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full animate-pulse"
+                        :class="getStatusColor(agentStore.currentStatus).split(' ')[0]"></span>
+                      <span class="text-sm font-bold text-gray-800 dark:text-gray-100 leading-none">
+                        {{ agentStore.currentStatus || '...' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="agentStore.isLoading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500">
+                </div>
+                <svg v-else class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                  :class="{ 'rotate-180': isStatusMenuOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </transition>
           </div>
+
+          <transition enter-active-class="transition duration-100 ease-out"
+            enter-from-class="transform scale-95 opacity-0 -translate-y-2"
+            enter-to-class="transform scale-100 opacity-100 translate-y-0"
+            leave-active-class="transition duration-75 ease-in"
+            leave-from-class="transform scale-100 opacity-100 translate-y-0"
+            leave-to-class="transform scale-95 opacity-0 -translate-y-2">
+            <div v-if="isStatusMenuOpen && !agentStore.error"
+              class="absolute top-[65px] left-0 right-0 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden py-1 z-50">
+              <button v-for="status in agentStore.availableStatuses" :key="status" @click="selectStatus(status)"
+                class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full shadow-sm" :class="getStatusColor(status).split(' ')[0]"></div>
+                  <span
+                    class="text-sm text-gray-700 dark:text-gray-200 font-medium group-hover:text-gray-900 dark:group-hover:text-white">
+                    {{ t(`agent.statuses.${status.toLowerCase().replace(' ', '_')}`) }}
+                  </span>
+                </div>
+
+                <svg v-if="agentStore.currentStatus === status" class="w-4 h-4 text-blue-500" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
+          </transition>
         </div>
       </div>
 
@@ -190,7 +278,7 @@
               <Mic :size="20" />
               <span class="text-xs">{{
                 t(showAdvancedDialOptions ? 'phoneView.micOn' : 'phoneView.mic')
-              }}</span>
+                }}</span>
             </button>
 
             <div v-show="showAdvancedDialOptions"
@@ -220,7 +308,7 @@
             <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
             <span class="text-xs">{{
               t(isAutoAnswer ? 'phoneView.autoAnswerOn' : 'phoneView.autoAnswer')
-            }}</span>
+              }}</span>
           </button>
         </div>
       </div>
@@ -268,7 +356,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.server')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.server }}
               </span>
@@ -276,7 +364,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.user')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.username }}
               </span>
@@ -284,7 +372,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.domain')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.domain }}
               </span>
@@ -323,6 +411,7 @@ const { t } = useI18n()
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 const agentStore = useAgentStore()
+const isStatusMenuOpen = ref(false)
 
 const displayNumber = ref('')
 
@@ -409,9 +498,6 @@ const connectionStatus = computed(() => {
   return phoneStore.isRegistered ? 'Conectado' : 'Desconectado'
 })
 
-const connectionStatusClass = computed(() => {
-  return phoneStore.isRegistered ? 'bg-green-500' : 'bg-red-500'
-})
 
 const connectionStatusTextClass = computed(() => {
   return phoneStore.isRegistered
@@ -453,6 +539,31 @@ const stopRinging = () => {
   }
 }
 
+
+const toggleStatusMenu = () => {
+  if (!agentStore.isLoading) {
+    isStatusMenuOpen.value = !isStatusMenuOpen.value
+  }
+}
+
+const selectStatus = async (status: string) => {
+  isStatusMenuOpen.value = false;
+  const success = await agentStore.changeAgentStatus(status);
+  if (success) {
+    addActivityLog(`Estado cambiado a: ${status}`);
+  } else {
+    addActivityLog('Error al cambiar estado');
+  }
+}
+
+const getStatusColor = (status: string | null | undefined) => {
+  const s = status?.toLowerCase() || '';
+  if (s.includes('available')) return 'bg-green-500 text-green-500';
+  if (s.includes('available_on_demand')) return 'bg-blue-500 text-blue-500';
+  if (s.includes('break')) return 'bg-orange-500 text-orange-500';
+  if (s.includes('log')) return 'bg-red-500 text-red-500';
+  return 'bg-gray-400 text-gray-400';
+}
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (isCallActive.value) return

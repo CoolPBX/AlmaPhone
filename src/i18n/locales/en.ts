@@ -138,6 +138,7 @@ export default {
     timeout: 'Timeout',
     statuses: {
       available: 'Available',
+      available_on_demand: 'Available (On demand)',
       on_break: 'On Break',
       logged_out: 'Logged Out',
     },
