@@ -92,7 +92,7 @@
                   <div class="w-2 h-2 rounded-full shadow-sm" :class="getStatusColor(status).split(' ')[0]"></div>
                   <span
                     class="text-sm text-gray-700 dark:text-gray-200 font-medium group-hover:text-gray-900 dark:group-hover:text-white">
-                    {{ t(`agent.statuses.${status.toLowerCase().replace(' ', '_')}`) }}
+                    {{ t(`agent.statuses.${normalizeStatusKey(status)}`) }}
                   </span>
                 </div>
 
@@ -556,10 +556,19 @@ const selectStatus = async (status: string) => {
   }
 }
 
+const normalizeStatusKey = (status: string): string => {
+  return status
+    .toLowerCase()
+    .replace(/[()]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .trim()
+}
+
 const getStatusColor = (status: string | null | undefined) => {
   const s = status?.toLowerCase() || '';
+  if (s.includes('on demand') || s.includes('on_demand')) return 'bg-blue-500 text-blue-500';
   if (s.includes('available')) return 'bg-green-500 text-green-500';
-  if (s.includes('available_on_demand')) return 'bg-blue-500 text-blue-500';
   if (s.includes('break')) return 'bg-orange-500 text-orange-500';
   if (s.includes('log')) return 'bg-red-500 text-red-500';
   return 'bg-gray-400 text-gray-400';
