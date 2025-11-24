@@ -111,6 +111,9 @@ export default {
     controls: 'Controles',
     sipUnregistered: 'Sara: No registrado',
     controlPanel: 'Panel de Control',
+    sip: 'SIP',
+    agentPanel: 'Agente',
+    tbd: 'TBD',
   },
 
   // Success messages
@@ -120,5 +123,27 @@ export default {
     saved: 'Guardado exitosamente',
     updated: 'Actualizado exitosamente',
     deleted: 'Eliminado exitosamente',
+  },
+
+  callCenteragent: {
+    checkingCallCenter: 'Verificando call center...',
+    callCenterAgent: 'Agente de Call Center',
+    belongsToCallCenter: 'Pertenece al call center',
+    currentStatus: 'Estado actual',
+  },
+
+  agent: {
+    title: 'Estado de Agente',
+    changeStatus: 'Cambiar disponibilidad',
+    currentStatus: 'Estado actual',
+    updating: 'Actualizando...',
+    type: 'Tipo',
+    timeout: 'Timeout',
+    statuses: {
+      available: 'Disponible',
+      available_on_demand: 'Disponible (A demanda)',
+      on_break: 'En descanso',
+      logged_out: 'Desconectado',
+    },
   },
 }

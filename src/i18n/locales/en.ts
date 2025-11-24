@@ -36,7 +36,6 @@ export default {
     advacedOptions: 'Advanced Options',
     loggingOut: 'Logging out...',
     logOut: 'Log Out',
-
   },
 
   // Extension Selector
@@ -71,7 +70,7 @@ export default {
     incomingCall: 'Incoming Call',
   },
 
-    phoneView: {
+  phoneView: {
     recentCalls: 'Recent Calls',
     callTo: 'Calling',
     redial: 'Redial',
@@ -101,6 +100,9 @@ export default {
     sipUnregistered: 'Sara: Unregistered',
     enternumber: 'Enter a number',
     controlPanel: 'Control Panel',
+    sip: 'SIP',
+    agentPanel: 'Agent',
+    tbd: 'TBD',
   },
 
   // Errors
@@ -121,5 +123,27 @@ export default {
     saved: 'Saved successfully',
     updated: 'Updated successfully',
     deleted: 'Deleted successfully',
+  },
+
+  callCenteragent: {
+    checkingCallCenter: 'Checking call center...',
+    callCenterAgent: 'Call Center Agent',
+    belongsToCallCenter: 'Belongs to call center',
+    currentStatus: 'Current status',
+  },
+  
+  agent: {
+    title: 'Agent Status',
+    changeStatus: 'Change availability',
+    currentStatus: 'Current status',
+    updating: 'Updating...',
+    type: 'Type',
+    timeout: 'Timeout',
+    statuses: {
+      available: 'Available',
+      available_on_demand: 'Available (On demand)',
+      on_break: 'On Break',
+      logged_out: 'Logged Out',
+    },
   },
 }
