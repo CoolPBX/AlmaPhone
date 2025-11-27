@@ -36,6 +36,10 @@ export default {
     advacedOptions: 'Opciones Avanzadas',
     loggingOut: 'Cerrando sesión...',
     logOut: 'Cerrar Sesión',
+    wssProxyName: 'Nombre del Proxy WSS',
+    wssProxyPort: 'Puerto del Proxy WSS',
+    validationError: 'Por favor, corrige los campos marcados en rojo',
+    saveError: 'Error al guardar la configuración',
   },
 
   // Extension Selector

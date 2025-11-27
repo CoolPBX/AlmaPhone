@@ -14,7 +14,7 @@
             class="w-full"
             :invalid="!isValidHost(form.wssProxy)"
           />
-          <label for="wssProxy">WSS Proxy Name</label>
+          <label for="wssProxy">{{ t('auth.wssProxyName') }}</label>
         </FloatLabel>
 
         <FloatLabel>
@@ -26,7 +26,7 @@
             class="w-full"
             :invalid="!isValidPort(form.wssPort)"
           />
-          <label for="wssPort">WSS Proxy Port</label>
+          <label for="wssPort">{{ t('auth.wssProxyPort') }}</label>
         </FloatLabel>
       </div>
 
@@ -42,13 +42,13 @@
       <div class="flex justify-end gap-2 pt-4">
         <Button
           type="button"
-          label="Cancel"
+          :label="t('common.cancel')"
           severity="secondary"
           @click="handleCancel"
         />
         <Button
           type="submit"
-          label="Save"
+          :label="t('common.save')"
           :disabled="!isFormValid"
         />
       </div>
@@ -108,7 +108,7 @@ const isFormValid = computed(() => {
 
 const handleSave = () => {
   if (!isFormValid.value) {
-    error.value = 'Por favor, corrige los campos marcados en rojo'
+    error.value = t('auth.validationError')
     return
   }
 
@@ -116,11 +116,11 @@ const handleSave = () => {
     sipStore.updateAdvancedConfig({
       server: `wss://${form.value.wssProxy}:${form.value.wssPort}`
     })
-    
+
     emit('saved')
     emit('close')
   } catch {
-    error.value = 'Error al guardar la configuración'
+    error.value = t('auth.saveError')
   }
 }
 
