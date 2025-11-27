@@ -95,27 +95,28 @@ export const useExtensionStore = defineStore(
     }
 
     const changeExtension = async (extension: ExtensionItemDto): Promise<boolean> => {
-      selectExtension(extension)
+      try {
+        const sipStore = useSipStore()
+        const displayName = extension.effective_caller_id_name || extension.extension
 
-      const sipStore = useSipStore()
-      if (sipStore.isConnected) {
-        await sipStore.disconnect()
-      }
+        const success = await sipStore.reinitializeWithExtension({
+          username: extension.extension,
+          password: extension.password,
+          domain: extension.domain_name,
+          displayName: displayName,
+        })
 
-      const displayName = extension.effective_caller_id_name || extension.extension
-
-      const success = await sipStore.initializeSip({
-        username: extension.extension,
-        password: extension.password,
-        domain: extension.domain_name,
-        displayName: displayName,
-      })
-
-      if (success) {
-        localStorage.setItem('selected_extension', JSON.stringify(extension))
-        return true
-      } else {
-        error.value = 'Failed to change extension'
+        if (success) {
+          selectExtension(extension)
+          localStorage.setItem('selected_extension', JSON.stringify(extension))
+          return true
+        } else {
+          error.value = 'Failed to change extension'
+          return false
+        }
+      } catch (err) {
+        console.error('Error in changeExtension:', err)
+        error.value = err instanceof Error ? err.message : 'Failed to change extension'
         return false
       }
     }

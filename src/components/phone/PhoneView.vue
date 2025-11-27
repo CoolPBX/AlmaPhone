@@ -208,8 +208,8 @@
         <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
           {{ t('phoneView.recentCalls') }}
         </h4>
-        <div class="space-y-2 max-h-40 overflow-y-auto">
-          <div v-for="call in recentCalls" :key="call.id" @click="selectRecentCall(call.number)"
+        <div v-if="phoneStore.recentCalls.length > 0" class="space-y-2 max-h-40 overflow-y-auto">
+          <div v-for="call in phoneStore.recentCalls" :key="call.id" @click="selectRecentCall(call.number)"
             class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
             <div class="flex items-center space-x-3">
               <svg :class="call.type === 'outgoing' ? 'text-green-500' : 'text-blue-500'" class="w-4 h-4" fill="none"
@@ -225,6 +225,9 @@
               {{ formatTime(call.timestamp) }}
             </span>
           </div>
+        </div>
+        <div v-else class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400">No recent calls</p>
         </div>
       </div>
     </div>
@@ -520,12 +523,6 @@ const dialpadKeys = [
   { value: '#', letters: '' },
 ]
 
-const recentCalls = ref([
-  { id: 1, number: '1234567890', type: 'outgoing', timestamp: new Date(Date.now() - 300000) },
-  { id: 2, number: '0987654321', type: 'incoming', timestamp: new Date(Date.now() - 600000) },
-  { id: 3, number: '1122334455', type: 'outgoing', timestamp: new Date(Date.now() - 900000) },
-])
-
 const connectionStatus = computed(() => {
   return phoneStore.isRegistered ? t('connectionStatus.connected') : t('connectionStatus.disconnected')
 })
@@ -714,12 +711,7 @@ const makeCall = async (number: string) => {
       callStartTime.value = new Date()
       startCallTimer()
 
-      recentCalls.value.unshift({
-        id: Date.now(),
-        number: number,
-        type: 'outgoing',
-        timestamp: new Date(),
-      })
+      phoneStore.addRecentCall(number, 'outgoing')
 
       addActivityLog(`${t('activityLogs.callInitiated')} ${number}`)
     } else {
@@ -757,10 +749,15 @@ const answerCall = async () => {
 
     await phoneStore.answerCall()
 
+    // Obtener el número del llamante si está disponible
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const incomingNumber = (phoneStore.simpleUser as any)?.session?.remoteIdentity?.uri?.user || 'Incoming Call'
 
-    currentCallNumber.value = t('phone.incomingCall')
+    currentCallNumber.value = incomingNumber
     callStartTime.value = new Date()
     startCallTimer()
+
+    phoneStore.addRecentCall(incomingNumber, 'incoming')
 
     addActivityLog(t('activityLogs.incomingCallAnswered'))
 
@@ -913,6 +910,7 @@ watch(
       currentCallNumber.value = ''
       callStartTime.value = null
       stopRinging()
+      clearDisplay()
     }
 
     if (newState === 'ringing' && oldState !== 'ringing') {
@@ -936,6 +934,7 @@ watch(
 
 onMounted(async () => {
   phoneStore.loadSipConfigFromStorage()
+  phoneStore.loadRecentCallsFromStorage()
 
   isDnd.value = phoneStore.isDnd
   isAutoAnswer.value = phoneStore.isAutoAnswer

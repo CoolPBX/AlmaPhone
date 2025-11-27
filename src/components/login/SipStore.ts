@@ -8,6 +8,13 @@ import {
 } from 'sip.js/lib/platform/web'
 import { ref } from 'vue'
 
+export interface RecentCall {
+  id: number
+  number: string
+  type: 'outgoing' | 'incoming'
+  timestamp: Date
+}
+
 export const useSipStore = defineStore('sip', () => {
   const simpleUser = ref<SimpleUser | null>(null)
   const isConnected = ref(false)
@@ -24,6 +31,7 @@ export const useSipStore = defineStore('sip', () => {
   const isMuted = ref(false)
   const isOnHold = ref(false)
   const toast = useToast()
+  const recentCalls = ref<RecentCall[]>([])
 
   const audioElement = ref<HTMLAudioElement | null>(null)
 
@@ -350,6 +358,13 @@ export const useSipStore = defineStore('sip', () => {
   const disconnect = async (): Promise<void> => {
     try {
       if (simpleUser.value) {
+        if (isRegistered.value) {
+          try {
+            await simpleUser.value.unregister()
+          } catch (unregisterErr) {
+            console.error('Error during unregister:', unregisterErr)
+          }
+        }
         await simpleUser.value.disconnect()
       }
       connectionState.value = 'disconnected'
@@ -365,9 +380,7 @@ export const useSipStore = defineStore('sip', () => {
     audioElement.value = element
   }
 
-  const updateAdvancedConfig = (config: {
-    server?: string
-  }): void => {
+  const updateAdvancedConfig = (config: { server?: string }): void => {
     if (config.server) {
       sipConfig.value.server = config.server
     }
@@ -382,6 +395,10 @@ export const useSipStore = defineStore('sip', () => {
   }): Promise<boolean> => {
     try {
       if (simpleUser.value && isConnected.value) {
+        if (isRegistered.value) {
+          await simpleUser.value.unregister()
+          await new Promise((resolve) => setTimeout(resolve, 500))
+        }
         await disconnect()
       }
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -447,14 +464,60 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const subscribeMWI = async (): Promise<void> => {
-  try {
-    if (simpleUser.value && isRegistered.value) {
-      console.log('MWI subscription active')
+    try {
+      if (simpleUser.value && isRegistered.value) {
+        console.log('MWI subscription active')
+      }
+    } catch (err) {
+      console.error('Error subscribing to MWI:', err)
     }
-  } catch (err) {
-    console.error('Error subscribing to MWI:', err)
   }
-}
+
+  const addRecentCall = (number: string, type: 'outgoing' | 'incoming'): void => {
+    const newCall: RecentCall = {
+      id: Date.now(),
+      number,
+      type,
+      timestamp: new Date(),
+    }
+
+    recentCalls.value.unshift(newCall)
+
+    if (recentCalls.value.length > 10) {
+      recentCalls.value = recentCalls.value.slice(0, 10)
+    }
+
+    saveRecentCallsToStorage()
+  }
+
+  const loadRecentCallsFromStorage = (): void => {
+    const saved = localStorage.getItem('recentCalls')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        recentCalls.value = parsed.map((call: RecentCall) => ({
+          ...call,
+          timestamp: new Date(call.timestamp),
+        }))
+      } catch (err) {
+        console.error('Error loading recent calls:', err)
+        recentCalls.value = []
+      }
+    }
+  }
+
+  const saveRecentCallsToStorage = (): void => {
+    try {
+      localStorage.setItem('recentCalls', JSON.stringify(recentCalls.value))
+    } catch (err) {
+      console.error('Error saving recent calls:', err)
+    }
+  }
+
+  const clearRecentCalls = (): void => {
+    recentCalls.value = []
+    localStorage.removeItem('recentCalls')
+  }
 
   return {
     // State
@@ -471,6 +534,7 @@ export const useSipStore = defineStore('sip', () => {
     callStartTime,
     isMuted,
     isOnHold,
+    recentCalls,
 
     // Actions
     initializeSip,
@@ -491,6 +555,9 @@ export const useSipStore = defineStore('sip', () => {
     reinitializeWithExtension,
     loadSipConfigFromStorage,
     saveSipConfigToStorage,
-    subscribeMWI
+    subscribeMWI,
+    addRecentCall,
+    loadRecentCallsFromStorage,
+    clearRecentCalls,
   }
 })
