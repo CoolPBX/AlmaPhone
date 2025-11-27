@@ -28,10 +28,10 @@ export const useSipStore = defineStore('sip', () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: 'wss://coolpbx2.hornblower.com:7443',
+    server: import.meta.env.VITE_SIP_SERVER_URL || '',
     username: '',
     password: '',
-    domain: 'coolpbx2.hornblower.com',
+    domain: import.meta.env.VITE_SIP_DOMAIN || '',
     displayName: '',
   })
 

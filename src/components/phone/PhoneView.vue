@@ -291,7 +291,7 @@
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                   <option value="" disabled>{{ t('phoneView.selectDevice') }}</option>
                   <option v-for="device in audioInputDevices" :key="device.deviceId" :value="device.deviceId">
-                    {{ device.label || `Micrófono ${device.deviceId.slice(0, 8)}...` }}
+                    {{ device.label || `${t('devices.microphone')} ${device.deviceId.slice(0, 8)}...` }}
                   </option>
                 </select>
               </div>
@@ -474,9 +474,9 @@ const isCallActive = computed(() => {
 const ringTone = ref<HTMLAudioElement | null>(null)
 
 const activityLogs = ref([
-  { id: 1, timestamp: new Date(), message: 'SIP inicializado' },
-  { id: 2, timestamp: new Date(Date.now() - 60000), message: 'Conectando al servidor' },
-  { id: 3, timestamp: new Date(Date.now() - 120000), message: 'Aplicación iniciada' },
+  { id: 1, timestamp: new Date(), message: t('activityLogs.sipInitialized') },
+  { id: 2, timestamp: new Date(Date.now() - 60000), message: t('activityLogs.connectingToServer') },
+  { id: 3, timestamp: new Date(Date.now() - 120000), message: t('activityLogs.applicationStarted') },
 ])
 
 const dialSounds: Record<
@@ -527,7 +527,7 @@ const recentCalls = ref([
 ])
 
 const connectionStatus = computed(() => {
-  return phoneStore.isRegistered ? 'Conectado' : 'Desconectado'
+  return phoneStore.isRegistered ? t('connectionStatus.connected') : t('connectionStatus.disconnected')
 })
 
 
@@ -582,9 +582,9 @@ const selectStatus = async (status: string) => {
   isStatusMenuOpen.value = false;
   const success = await agentStore.changeAgentStatus(status);
   if (success) {
-    addActivityLog(`Estado cambiado a: ${status}`);
+    addActivityLog(`${t('activityLogs.statusChangedTo')}: ${status}`);
   } else {
-    addActivityLog('Error al cambiar estado');
+    addActivityLog(t('activityLogs.errorChangingStatus'));
   }
 }
 
@@ -721,13 +721,13 @@ const makeCall = async (number: string) => {
         timestamp: new Date(),
       })
 
-      addActivityLog(`Llamada iniciada a ${number}`)
+      addActivityLog(`${t('activityLogs.callInitiated')} ${number}`)
     } else {
-      addActivityLog(`Error al iniciar llamada a ${number}`)
+      addActivityLog(`${t('activityLogs.errorInitiatingCall')} ${number}`)
     }
   } catch (error) {
     console.error('Error making call:', error)
-    addActivityLog(`Error al llamar a ${number}`)
+    addActivityLog(`${t('activityLogs.errorCalling')} ${number}`)
   }
 }
 
@@ -737,7 +737,7 @@ const endCall = async () => {
 
     await phoneStore.endCall()
 
-    addActivityLog(`Llamada terminada con ${currentCallNumber.value}`)
+    addActivityLog(`${t('activityLogs.callEnded')} ${currentCallNumber.value}`)
 
     currentCallNumber.value = ''
     callStartTime.value = null
@@ -746,7 +746,7 @@ const endCall = async () => {
     console.log('Llamada terminada, nuevo estado:', phoneStore.callState)
   } catch (error) {
     console.error('Error ending call:', error)
-    addActivityLog('Error al terminar la llamada')
+    addActivityLog(t('activityLogs.errorEndingCall'))
   }
 }
 
@@ -758,16 +758,16 @@ const answerCall = async () => {
     await phoneStore.answerCall()
 
 
-    currentCallNumber.value = 'Llamada entrante'
+    currentCallNumber.value = t('phone.incomingCall')
     callStartTime.value = new Date()
     startCallTimer()
 
-    addActivityLog('Llamada entrante contestada')
+    addActivityLog(t('activityLogs.incomingCallAnswered'))
 
     console.log('Llamada contestada exitosamente, nuevo estado:', phoneStore.callState)
   } catch (error) {
     console.error('Error answering call:', error)
-    addActivityLog('Error al contestar la llamada')
+    addActivityLog(t('activityLogs.errorAnsweringCall'))
   }
 }
 
@@ -778,12 +778,12 @@ const rejectCall = async () => {
 
     await phoneStore.endCall()
 
-    addActivityLog('Llamada entrante rechazada')
+    addActivityLog(t('activityLogs.incomingCallRejected'))
 
     console.log('Llamada rechazada, nuevo estado:', phoneStore.callState)
   } catch (error) {
     console.error('Error rejecting call:', error)
-    addActivityLog('Error al rechazar la llamada')
+    addActivityLog(t('activityLogs.errorRejectingCall'))
   }
 }
 
@@ -847,7 +847,7 @@ const redial = () => {
 const toggleDnd = () => {
   isDnd.value = !isDnd.value
   phoneStore.isDnd = isDnd.value
-  addActivityLog(`DND ${isDnd.value ? 'activado' : 'desactivado'}`)
+  addActivityLog(isDnd.value ? t('activityLogs.dndActivated') : t('activityLogs.dndDeactivated'))
 }
 
 const checkVoicemail = async () => {
@@ -855,9 +855,9 @@ const checkVoicemail = async () => {
     const vmNumber = '*98'
     displayNumber.value = vmNumber
     await handleCall()
-    addActivityLog('Accediendo a mensajes de voz')
+    addActivityLog(t('activityLogs.accessingVoicemail'))
   } catch (error) {
-    addActivityLog('Error accediendo a mensajes de voz')
+    addActivityLog(t('activityLogs.errorAccessingVoicemail'))
     console.error('Error checking voicemail:', error)
   }
 }
@@ -865,7 +865,7 @@ const checkVoicemail = async () => {
 const toggleAutoAnswer = () => {
   isAutoAnswer.value = !isAutoAnswer.value
   phoneStore.isAutoAnswer = isAutoAnswer.value
-  addActivityLog(`AutoAnswer ${isAutoAnswer.value ? 'activado' : 'desactivado'}`)
+  addActivityLog(isAutoAnswer.value ? t('activityLogs.autoAnswerActivated') : t('activityLogs.autoAnswerDeactivated'))
 }
 
 const addActivityLog = (message: string) => {
@@ -891,7 +891,7 @@ const toggleDialOptions = async () => {
 
 const toggleMute = async () => {
   await phoneStore.toggleMute()
-  addActivityLog(`Micrófono ${phoneStore.isMuted ? 'silenciado' : 'activado'}`)
+  addActivityLog(phoneStore.isMuted ? t('activityLogs.microphoneMuted') : t('activityLogs.microphoneActivated'))
 }
 
 const loadAudioInputDevices = async () => {
@@ -917,7 +917,7 @@ watch(
 
     if (newState === 'ringing' && oldState !== 'ringing') {
       startRinging()
-      addActivityLog('Llamada entrante - Timbre iniciado')
+      addActivityLog(t('activityLogs.incomingCallRinging'))
     }
   },
 )

@@ -35,7 +35,7 @@
             loadingIcon="pi pi-spin pi-spinner" class="w-full" size="large" />
         </form>
         <div class="flex justify-center mt-3">
-          <Button type="button" label="Opciones Avanzadas" severity="secondary" size="small" text
+          <Button type="button" :label="t('auth.advacedOptions')" severity="secondary" size="small" text
             @click="showAdvancedOptions = true" />
         </div>
 
