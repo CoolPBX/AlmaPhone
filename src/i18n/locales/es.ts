@@ -146,4 +146,42 @@ export default {
       logged_out: 'Desconectado',
     },
   },
+
+  // Activity Logs
+  activityLogs: {
+    sipInitialized: 'SIP inicializado',
+    connectingToServer: 'Conectando al servidor',
+    applicationStarted: 'Aplicación iniciada',
+    statusChangedTo: 'Estado cambiado a',
+    errorChangingStatus: 'Error al cambiar estado',
+    callInitiated: 'Llamada iniciada a',
+    errorInitiatingCall: 'Error al iniciar llamada a',
+    errorCalling: 'Error al llamar a',
+    callEnded: 'Llamada terminada con',
+    errorEndingCall: 'Error al terminar la llamada',
+    incomingCallAnswered: 'Llamada entrante contestada',
+    errorAnsweringCall: 'Error al contestar la llamada',
+    incomingCallRejected: 'Llamada entrante rechazada',
+    errorRejectingCall: 'Error al rechazar la llamada',
+    dndActivated: 'DND activado',
+    dndDeactivated: 'DND desactivado',
+    accessingVoicemail: 'Accediendo a mensajes de voz',
+    errorAccessingVoicemail: 'Error accediendo a mensajes de voz',
+    autoAnswerActivated: 'AutoAnswer activado',
+    autoAnswerDeactivated: 'AutoAnswer desactivado',
+    microphoneMuted: 'Micrófono silenciado',
+    microphoneActivated: 'Micrófono activado',
+    incomingCallRinging: 'Llamada entrante - Timbre iniciado',
+  },
+
+  // Connection Status
+  connectionStatus: {
+    connected: 'Conectado',
+    disconnected: 'Desconectado',
+  },
+
+  // Device Labels
+  devices: {
+    microphone: 'Micrófono',
+  },
 }

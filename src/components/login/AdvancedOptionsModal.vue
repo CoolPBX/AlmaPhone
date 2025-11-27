@@ -42,13 +42,13 @@
       <div class="flex justify-end gap-2 pt-4">
         <Button
           type="button"
-          label="Cancelar"
+          label="Cancel"
           severity="secondary"
           @click="handleCancel"
         />
         <Button
           type="submit"
-          label="Guardar"
+          label="Save"
           :disabled="!isFormValid"
         />
       </div>

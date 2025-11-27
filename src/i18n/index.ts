@@ -6,22 +6,22 @@ export type MessageSchema = typeof en
 export type AvailableLocales = 'en' | 'es'
 
 const getDefaultLocale = (): AvailableLocales => {
-  const stored = localStorage.getItem('almaphone-locale')
-  if (stored && (stored === 'en' || stored === 'es')) {
-    return stored as AvailableLocales
-  }
+  // const stored = localStorage.getItem('almaphone-locale')
+  // if (stored && (stored === 'en' || stored === 'es')) {
+  //   return stored as AvailableLocales
+  // }
 
-  const browserLang = navigator.language.split('-')[0]
-  if (browserLang === 'en' || browserLang === 'es') {
-    return browserLang as AvailableLocales
-  }
+  // const browserLang = navigator.language.split('-')[0]
+  // if (browserLang === 'en' || browserLang === 'es') {
+  //   return browserLang as AvailableLocales
+  // }
 
-  return 'es'
+  return 'en'
 }
 
 export const i18n = createI18n({
   locale: getDefaultLocale(),
-  fallbackLocale: 'es',
+  fallbackLocale: 'en',
   messages: {
     en,
     es,
