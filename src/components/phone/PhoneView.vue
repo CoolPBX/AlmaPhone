@@ -1,5 +1,6 @@
 <template>
   <div class="softphone-container flex gap-4 p-4 bg-gray-100 dark:bg-gray-900 min-h-screen">
+    <audio ref="remoteAudio" autoplay style="display: none;"></audio>
     <div
       class="phone-dialer bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 w-[320px] flex-shrink-0">
       <div class="mb-6">
@@ -169,7 +170,7 @@
           class="flex items-center justify-center w-16 h-16 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="phoneStore.isMuted" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M5.586 5.586A2 2 0 001 8v8a2 2 0 003.414 1.414L16 6.828V4a2 2 0 00-3.414-1.414L5.586 5.586zM17 17l-4-4m0 0L9 9m4 4l4-4m-4 4v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6" />
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M3 3l18 18" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
@@ -271,7 +272,7 @@
           <button @click="checkVoicemail" :disabled="isCallActive"
             class="control-button bg-teal-500 hover:bg-teal-600 text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
             <Voicemail :size="20" />
-            <span class="text-xs">VoiceMail: {{ phoneStore.voicemail.new }}/{{ phoneStore.voicemail.old }}</span>
+            <span class="text-xs">Voice mail: {{ phoneStore.voicemail.new }}/{{ phoneStore.voicemail.old }}</span>
           </button>
 
           <div class="relative">
@@ -447,6 +448,7 @@ const phoneStore = useSipStore()
 const agentStore = useAgentStore()
 const authStore = useAuthStore()
 const isStatusMenuOpen = ref(false)
+const remoteAudio = ref<HTMLAudioElement | null>(null)
 
 const displayNumber = ref('')
 
@@ -725,7 +727,7 @@ const makeCall = async (number: string) => {
 
 const endCall = async () => {
   try {
-    console.log('Intentando terminar llamada, estado actual:', phoneStore.callState)
+    console.log('Attempting to end call, current state:', phoneStore.callState)
 
     await phoneStore.endCall()
 
@@ -735,7 +737,7 @@ const endCall = async () => {
     callStartTime.value = null
     stopCallTimer()
 
-    console.log('Llamada terminada, nuevo estado:', phoneStore.callState)
+    console.log('Call ended, new state:', phoneStore.callState)
   } catch (error) {
     console.error('Error ending call:', error)
     addActivityLog(t('activityLogs.errorEndingCall'))
@@ -745,11 +747,10 @@ const endCall = async () => {
 const answerCall = async () => {
   try {
     stopRinging()
-    console.log('Contestando llamada entrante...')
+    console.log('Answering incoming call...')
 
     await phoneStore.answerCall()
 
-    // Obtener el número del llamante si está disponible
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const incomingNumber = (phoneStore.simpleUser as any)?.session?.remoteIdentity?.uri?.user || 'Incoming Call'
 
@@ -761,7 +762,7 @@ const answerCall = async () => {
 
     addActivityLog(t('activityLogs.incomingCallAnswered'))
 
-    console.log('Llamada contestada exitosamente, nuevo estado:', phoneStore.callState)
+    console.log('Call answered successfully, new state:', phoneStore.callState)
   } catch (error) {
     console.error('Error answering call:', error)
     addActivityLog(t('activityLogs.errorAnsweringCall'))
@@ -770,14 +771,14 @@ const answerCall = async () => {
 
 const rejectCall = async () => {
   try {
-    console.log('Rechazando llamada entrante...')
+    console.log('Rejecting incoming call...')
     stopRinging()
 
     await phoneStore.endCall()
 
     addActivityLog(t('activityLogs.incomingCallRejected'))
 
-    console.log('Llamada rechazada, nuevo estado:', phoneStore.callState)
+    console.log('Call rejected, new state:', phoneStore.callState)
   } catch (error) {
     console.error('Error rejecting call:', error)
     addActivityLog(t('activityLogs.errorRejectingCall'))
@@ -794,10 +795,10 @@ const handleCall = async () => {
   })
 
   if (isCallActive.value && canEndCall.value) {
-    console.log('Terminando llamada...')
+    console.log('Ending call...')
     await endCall()
   } else if (!isCallActive.value && canMakeCall.value) {
-    console.log('Iniciando llamada...')
+    console.log('Initiating call...')
     await makeCall(displayNumber.value)
   }
 }
@@ -947,8 +948,13 @@ onMounted(async () => {
     phoneStore.sipConfig.server &&
     !phoneStore.isConnected
   ) {
-    await phoneStore.initializeSip(phoneStore.sipConfig)
+    if (remoteAudio.value) {
+      await phoneStore.initializeSip(phoneStore.sipConfig, remoteAudio.value)
+    }
+  } else if (remoteAudio.value) {
+    phoneStore.setAudioElement(remoteAudio.value)
   }
+
   if (extensionStore.selectedExtension) {
     await agentStore.checkAgentStatus(extensionStore.selectedExtension.extension)
   }
@@ -1025,18 +1031,6 @@ const handleLogout = async () => {
   .control-panel,
   .dynamic-panel {
     min-width: auto;
-  }
-}
-
-@media (max-width: 768px) {
-  .softphone-container {
-    padding: 2px;
-    gap: 2px;
-  }
-
-  .control-panel,
-  .dynamic-panel {
-    padding: 4px;
   }
 }
 </style>
