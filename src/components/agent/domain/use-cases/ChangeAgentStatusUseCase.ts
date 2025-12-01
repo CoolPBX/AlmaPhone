@@ -7,7 +7,7 @@ export class ChangeAgentStatusUseCase {
 
   async execute(
     token: string,
-    agentName: string,
+    agentUuid: string,
     status: string,
   ): Promise<Either<ApiErrorDto, { success: boolean }>> {
     if (!token || token.trim() === '') {
@@ -17,9 +17,9 @@ export class ChangeAgentStatusUseCase {
       })
     }
 
-    if (!agentName || agentName.trim() === '') {
+    if (!agentUuid || agentUuid.trim() === '') {
       return left({
-        message: 'Agent name is required',
+        message: 'Agent UUID is required',
         status: 400,
       })
     }
@@ -32,7 +32,11 @@ export class ChangeAgentStatusUseCase {
     }
 
     try {
-      return await this.agentRepository.changeAgentStatus({ token, agent_name: agentName, status })
+      return await this.agentRepository.changeAgentStatus({
+        token,
+        agent_uuid: agentUuid,
+        status,
+      })
     } catch {
       return left({
         message: 'Network error occurred while changing agent status',

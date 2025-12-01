@@ -47,10 +47,9 @@ export class AgentRepository implements AgentRepositoryContract {
 
     try {
       const response = await axios.patch(
-        `${this.baseUrl}/my/agents/status`,
+        `${this.baseUrl}/my/agent/${request.agent_uuid}`, 
         {
-          agent_name: request.agent_name,
-          status: request.status,
+          agent_status: request.status, 
         },
         {
           headers: {
@@ -61,7 +60,11 @@ export class AgentRepository implements AgentRepositoryContract {
         },
       )
 
-      return right({ success: response.status === 200 })
+      console.log('Change status response:', response.data)
+
+      return right({
+        success: response.data.message === 'Agent updated successfully',
+      })
     } catch (error) {
       return left(this.handleError(error))
     }

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 
 export const AgentItemSchema = z.object({
+  call_center_agent_uuid: z.string().uuid('Invalid agent UUID'),
   agent_name: z.string().min(1, 'Agent name is required'),
   agent_type: z.string(),
   agent_call_timeout: z.number().int(),
@@ -27,7 +28,7 @@ export const CheckAgentRequestSchema = z.object({
 
 export const ChangeAgentStatusRequestSchema = z.object({
   token: z.string().min(1, 'Token is required'),
-  agent_name: z.string().min(1, 'Agent name is required'),
+  agent_uuid: z.string().uuid('Invalid agent UUID'),
   status: z.string().min(1, 'Status is required'),
 })
 

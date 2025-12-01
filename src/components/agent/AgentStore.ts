@@ -18,7 +18,12 @@ export const useAgentStore = defineStore('agent', () => {
 
   const isAgent = computed(() => agentInfo.value !== null)
   const currentStatus = computed(() => agentInfo.value?.agent_status || null)
-  const availableStatuses = ref<string[]>(['Available', 'Available (On Demand)', 'On Break', 'Logged Out'])
+  const availableStatuses = ref<string[]>([
+    'Available',
+    'Available (On Demand)',
+    'On Break',
+    'Logged Out',
+  ])
 
   const checkAgentStatus = async (extension: string): Promise<boolean> => {
     const authStore = useAuthStore()
@@ -61,18 +66,23 @@ export const useAgentStore = defineStore('agent', () => {
       return false
     }
 
+    if (!agentInfo.value.call_center_agent_uuid) {
+      error.value = 'Agent UUID not found'
+      return false
+    }
+
     isLoading.value = true
     error.value = null
 
     try {
       const result = await changeAgentStatusUseCase.execute(
         authStore.user!.api_key,
-        agentInfo.value.agent_name,
+        agentInfo.value.call_center_agent_uuid,
         newStatus,
       )
 
       return result.fold(
-        (err: ApiErrorDto) => {
+        (err) => {
           error.value = err.message
           return false
         },
@@ -90,7 +100,6 @@ export const useAgentStore = defineStore('agent', () => {
       isLoading.value = false
     }
   }
-
   const clearAgent = () => {
     agentInfo.value = null
     error.value = null
