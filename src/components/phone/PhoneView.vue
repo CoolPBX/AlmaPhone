@@ -1,5 +1,5 @@
 <template>
-  <div class="softphone-container flex gap-4 p-4 bg-gray-100 dark:bg-gray-900 min-h-screen">
+  <div class="softphone-container flex gap-4 p-4 bg-gray-100 dark:bg-gray-900 min-h-screen pb-32">
     <audio ref="remoteAudio" autoplay style="display: none;"></audio>
     <div
       class="phone-dialer bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 w-[320px] flex-shrink-0">
@@ -233,112 +233,6 @@
       </div>
     </div>
 
-    <div class="flex-1 min-w-0 space-y-4">
-      <div
-        class="control-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-          {{ t('phoneView.controlPanel') }}
-        </h3>
-
-        <!-- <div class="mb-6">
-          <div
-            class="bg-red-50 dark:bg-red-900 rounded-lg p-4 border border-red-200 dark:border-red-700"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-3">
-                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span class="text-sm font-medium text-red-900 dark:text-red-100">
-                  Sara: Unregistered
-                </span>
-              </div>
-            </div>
-          </div>
-        </div> -->
-
-        <div class="grid grid-cols-2 gap-3 mb-6">
-          <button @click="redial" :disabled="!lastDialedNumber || isCallActive"
-            class="control-button bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-4 px-3 rounded-lg transition-colors disabled:cursor-not-allowed flex flex-col items-center space-y-1">
-            <RotateCcw :size="20" />
-            <span class="text-xs">{{ t('phoneView.redial') }}</span>
-          </button>
-
-          <button @click="toggleDnd" :class="isDnd ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'"
-            :disabled="isCallActive"
-            class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
-            <BellOff :size="20" />
-            <span class="text-xs">{{ t(isDnd ? 'phoneView.dndOn' : 'phoneView.dnd') }}</span>
-          </button>
-
-          <button @click="checkVoicemail" :disabled="isCallActive"
-            class="control-button bg-teal-500 hover:bg-teal-600 text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
-            <Voicemail :size="20" />
-            <span class="text-xs">Voice mail: {{ phoneStore.voicemail.new }}/{{ phoneStore.voicemail.old }}</span>
-          </button>
-
-          <div class="relative">
-            <button @click="toggleDialOptions"
-              :class="showAdvancedDialOptions ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'"
-              class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 w-full">
-              <Mic :size="20" />
-              <span class="text-xs">{{
-                t(showAdvancedDialOptions ? 'phoneView.micOn' : 'phoneView.mic')
-              }}</span>
-            </button>
-
-            <div v-show="showAdvancedDialOptions"
-              class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50">
-              <div>
-                <label for="micSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ t('phoneView.selectMic') }}
-                </label>
-                <select id="micSelect" v-model="selectedMicId"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                  <option value="" disabled>{{ t('phoneView.selectDevice') }}</option>
-                  <option v-for="device in audioInputDevices" :key="device.deviceId" :value="device.deviceId">
-                    {{ device.label || `${t('devices.microphone')} ${device.deviceId.slice(0, 8)}...` }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="showAdvancedDialOptions" @click="showAdvancedDialOptions = false" class="fixed inset-0 z-40"></div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-3 mb-6">
-          <button @click="toggleAutoAnswer"
-            :class="isAutoAnswer ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'" :disabled="isCallActive"
-            class="control-button text-white font-medium py-4 px-3 rounded-lg transition-colors flex flex-col items-center space-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
-            <component :is="isAutoAnswer ? 'PhoneCall' : 'PhoneIncoming'" :size="20" />
-            <span class="text-xs">{{
-              t(isAutoAnswer ? 'phoneView.autoAnswerOn' : 'phoneView.autoAnswer')
-            }}</span>
-          </button>
-        </div>
-
-        <div class="border-t border-gray-200 dark:border-gray-700 my-6"></div>
-
-        <div class="grid grid-cols-1 gap-3">
-          <button @click="handleLogout" :disabled="authStore.isLoading"
-            class="w-full justify-center inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
-            <svg v-if="authStore.isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-              </path>
-            </svg>
-            <svg v-else class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            {{ authStore.isLoading ? t('auth.loggingOut') : t('auth.logOut') }}
-          </button>
-        </div>
-
-      </div>
-
-    </div>
 
     <div
       class="dynamic-panel bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex-1 min-w-0">
@@ -435,18 +329,15 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useExtensionStore } from '@/components/extension-selector/ExtensionStore'
 import { useSipStore } from '@/components/login/SipStore'
-import { useAuthStore } from '../login/AuthStore'
-import { RotateCcw, BellOff, Voicemail, Mic, PhoneOff } from 'lucide-vue-next'
+import { PhoneOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAgentStore } from '../agent/AgentStore'
-import router from '@/router'
 
 const { t } = useI18n()
 
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 const agentStore = useAgentStore()
-const authStore = useAuthStore()
 const isStatusMenuOpen = ref(false)
 const remoteAudio = ref<HTMLAudioElement | null>(null)
 
@@ -462,13 +353,8 @@ const deleteTimer = ref<number | null>(null)
 const deleteStartTime = ref<number | null>(null)
 const HOLD_DURATION = 500
 
-const isDnd = ref(false)
-const isAutoAnswer = ref(false)
 const lastDialedNumber = ref('')
 
-const showAdvancedDialOptions = ref(false)
-const audioInputDevices = ref<MediaDeviceInfo[]>([])
-const selectedMicId = ref<string | null>(null)
 const numberInputRef = ref<HTMLInputElement | null>(null)
 
 const isCallActive = computed(() => {
@@ -835,36 +721,7 @@ const formatTime = (date: Date) => {
   })
 }
 
-const redial = () => {
-  if (lastDialedNumber.value && !isCallActive.value) {
-    displayNumber.value = lastDialedNumber.value
-    handleCall()
-  }
-}
 
-const toggleDnd = () => {
-  isDnd.value = !isDnd.value
-  phoneStore.isDnd = isDnd.value
-  addActivityLog(isDnd.value ? t('activityLogs.dndActivated') : t('activityLogs.dndDeactivated'))
-}
-
-const checkVoicemail = async () => {
-  try {
-    const vmNumber = '*98'
-    displayNumber.value = vmNumber
-    await handleCall()
-    addActivityLog(t('activityLogs.accessingVoicemail'))
-  } catch (error) {
-    addActivityLog(t('activityLogs.errorAccessingVoicemail'))
-    console.error('Error checking voicemail:', error)
-  }
-}
-
-const toggleAutoAnswer = () => {
-  isAutoAnswer.value = !isAutoAnswer.value
-  phoneStore.isAutoAnswer = isAutoAnswer.value
-  addActivityLog(isAutoAnswer.value ? t('activityLogs.autoAnswerActivated') : t('activityLogs.autoAnswerDeactivated'))
-}
 
 const addActivityLog = (message: string) => {
   activityLogs.value.unshift({
@@ -878,30 +735,11 @@ const addActivityLog = (message: string) => {
   }
 }
 
-const toggleDialOptions = async () => {
-  if (showAdvancedDialOptions.value) {
-    showAdvancedDialOptions.value = false
-  } else {
-    showAdvancedDialOptions.value = true
-    await loadAudioInputDevices()
-  }
-}
-
 const toggleMute = async () => {
   await phoneStore.toggleMute()
   addActivityLog(phoneStore.isMuted ? t('activityLogs.microphoneMuted') : t('activityLogs.microphoneActivated'))
 }
 
-const loadAudioInputDevices = async () => {
-  try {
-    await navigator.mediaDevices.getUserMedia({ audio: true })
-
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    audioInputDevices.value = devices.filter((device) => device.kind === 'audioinput')
-  } catch (err) {
-    console.error('Error accediendo a dispositivos de audio:', err)
-  }
-}
 
 watch(
   () => phoneStore.callState,
@@ -937,8 +775,6 @@ onMounted(async () => {
   phoneStore.loadSipConfigFromStorage()
   phoneStore.loadRecentCallsFromStorage()
 
-  isDnd.value = phoneStore.isDnd
-  isAutoAnswer.value = phoneStore.isAutoAnswer
 
   window.addEventListener('keydown', handleKeyDown)
 
@@ -977,17 +813,6 @@ watch(displayNumber, () => {
   })
 })
 
-const handleLogout = async () => {
-  try {
-    if (phoneStore.isConnected) {
-      await phoneStore.disconnect()
-    }
-    await authStore.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Error during logout:', error)
-  }
-}
 
 
 </script>
