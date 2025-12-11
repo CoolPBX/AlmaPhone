@@ -1,7 +1,7 @@
 <template>
   <div class="fixed bottom-0 left-0 right-0 z-40 px-2 py-4 safe-area-pb pointer-events-none flex justify-center">
     
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1.5 max-w-fit overflow-x-auto no-scrollbar pointer-events-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1.5 max-w-fit overflow-visible pointer-events-auto">
       
       <div class="flex items-center justify-center gap-1 md:gap-4 min-w-max">
         
@@ -30,7 +30,7 @@
             class="text-gray-600 dark:text-gray-300 group-hover:text-teal-600 dark:group-hover:text-teal-400 mb-0.5" />
           
           <span class="text-[9px] md:text-[10px] font-medium text-gray-500 dark:text-gray-400">
-            Voicemail
+            {{ t('phoneView.voicemail') }}
           </span>
 
           <span v-if="phoneStore.voicemail.new > 0"
@@ -53,6 +53,7 @@
             leave-active-class="transition ease-in duration-75"
             leave-from-class="transform opacity-100 scale-100 translate-y-0"
             leave-to-class="transform opacity-0 scale-95 translate-y-2">
+            
             <div v-if="showAdvancedDialOptions"
               class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 z-50">
               <div class="flex justify-between items-center mb-2">
@@ -96,72 +97,56 @@
   </div>
   <div v-if="showAdvancedDialOptions" @click="showAdvancedDialOptions = false" class="fixed inset-0 z-30"></div>
 </template>
-
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, watch } from 'vue' // <--- Agregar watch
 import { useSipStore } from '@/components/login/SipStore'
 import { useAuthStore } from '@/components/login/AuthStore'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { RotateCcw, BellOff, Voicemail, Mic, PhoneIncoming, PhoneCall, LogOut, X } from 'lucide-vue-next'
+import { usePhoneActions } from '@/core/composables/usePhoneActions'
 
 const { t } = useI18n()
 const router = useRouter()
 const phoneStore = useSipStore()
 const authStore = useAuthStore()
 
-// State
-const isDnd = ref(phoneStore.isDnd)
-const isAutoAnswer = ref(phoneStore.isAutoAnswer)
+const phoneActionsComposable = usePhoneActions()
+const { lastDialedNumber, isCallActive, addActivityLog } = phoneActionsComposable
+
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
 const selectedMicId = ref<string | null>(null)
-const lastDialedNumber = ref(localStorage.getItem('lastDialedNumber') || '')
 
-const isCallActive = computed(() => {
-  const callStates = ['calling', 'ringing', 'connected', 'establishing']
-  return callStates.includes(phoneStore.callState)
-})
+const isDnd = computed(() => phoneStore.isDnd)
+const isAutoAnswer = computed(() => phoneStore.isAutoAnswer)
 
-// Actions
 const redial = () => {
   if (lastDialedNumber.value && !isCallActive.value) {
     phoneStore.makeCall(lastDialedNumber.value)
+    addActivityLog(`${t('activityLogs.redialing')} ${lastDialedNumber.value}`)
   }
 }
 
 const toggleDnd = () => {
-  isDnd.value = !isDnd.value
-  phoneStore.isDnd = isDnd.value
+  phoneStore.isDnd = !phoneStore.isDnd
+  addActivityLog(phoneStore.isDnd ? t('activityLogs.dndActivated') : t('activityLogs.dndDeactivated'))
 }
 
-const checkVoicemail = () => {
-  const vmNumber = '*98'
-  phoneStore.makeCall(vmNumber)
+const checkVoicemail = async () => {
+  try {
+    const vmNumber = '*98'
+    await phoneStore.makeCall(vmNumber)
+    addActivityLog(t('activityLogs.accessingVoicemail'))
+  } catch (error) {
+    addActivityLog(t('activityLogs.errorAccessingVoicemail'))
+    console.error('Error checking voicemail:', error)
+  }
 }
 
 const toggleAutoAnswer = () => {
-  isAutoAnswer.value = !isAutoAnswer.value
-  phoneStore.isAutoAnswer = isAutoAnswer.value
-}
-
-const toggleDialOptions = async () => {
-  if (showAdvancedDialOptions.value) {
-    showAdvancedDialOptions.value = false
-  } else {
-    showAdvancedDialOptions.value = true
-    await loadAudioInputDevices()
-  }
-}
-
-const loadAudioInputDevices = async () => {
-  try {
-    await navigator.mediaDevices.getUserMedia({ audio: true })
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    audioInputDevices.value = devices.filter((device) => device.kind === 'audioinput')
-  } catch (err) {
-    console.error('Error accessing audio devices:', err)
-  }
+  phoneStore.isAutoAnswer = !phoneStore.isAutoAnswer
+  addActivityLog(phoneStore.isAutoAnswer ? t('activityLogs.autoAnswerActivated') : t('activityLogs.autoAnswerDeactivated'))
 }
 
 const handleLogout = async () => {
@@ -176,19 +161,84 @@ const handleLogout = async () => {
   }
 }
 
-onMounted(() => {
-  isDnd.value = phoneStore.isDnd
+const toggleDialOptions = async () => {
+  if (showAdvancedDialOptions.value) {
+    showAdvancedDialOptions.value = false
+  } else {
+    showAdvancedDialOptions.value = true
+    await loadAudioInputDevices()
+  }
+}
+
+const loadAudioInputDevices = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    audioInputDevices.value = devices.filter((device) => device.kind === 'audioinput')
+
+    if (!selectedMicId.value && audioInputDevices.value.length > 0) {
+      const currentTrack = stream.getAudioTracks()[0]
+      let currentSettings: MediaTrackSettings | undefined
+      if (currentTrack) {
+        currentSettings = currentTrack.getSettings()
+      }
+
+      const activeDevice = currentSettings
+        ? audioInputDevices.value.find(d => d.deviceId === currentSettings.deviceId)
+        : undefined
+      selectedMicId.value = activeDevice?.deviceId || audioInputDevices.value[0]?.deviceId || null
+    }
+
+    stream.getTracks().forEach(track => track.stop())
+
+  } catch (err) {
+    console.error('Error accessing audio devices:', err)
+  }
+}
+
+watch(selectedMicId, async (newDeviceId) => {
+  if (!newDeviceId) return
+
+  try {
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: newDeviceId } }
+    })
+
+    const newTrack = newStream.getAudioTracks()[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const session = (phoneStore.simpleUser as any)?.session
+
+    if (session && isCallActive.value) {
+      const pc = session.sessionDescriptionHandler?.peerConnection
+      if (pc) {
+        const sender = pc.getSenders().find((s: RTCRtpSender) => s.track?.kind === 'audio')
+        if (sender) {
+          await sender.replaceTrack(newTrack)
+          addActivityLog(t('activityLogs.microphoneChanged') || 'Microphone changed')
+        }
+      }
+    } else {
+      console.log('Microphone selection updated for next call:', newDeviceId)
+    }
+
+  } catch (error) {
+    console.error('Error changing microphone:', error)
+    addActivityLog('Error changing microphone')
+  }
 })
+
 </script>
 
 <style scoped>
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
-/* Utilidad para ocultar scrollbar en navegadores Webkit si se desborda en pantallas mini */
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

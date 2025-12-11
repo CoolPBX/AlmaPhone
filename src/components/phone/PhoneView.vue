@@ -332,12 +332,23 @@ import { useSipStore } from '@/components/login/SipStore'
 import { PhoneOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAgentStore } from '../agent/AgentStore'
+import { usePhoneActions } from '@/core/composables/usePhoneActions'
 
 const { t } = useI18n()
 
 const extensionStore = useExtensionStore()
 const phoneStore = useSipStore()
 const agentStore = useAgentStore()
+
+const phoneActionsComposable = usePhoneActions()
+const { lastDialedNumber, activityLogs, isCallActive, addActivityLog } = phoneActionsComposable
+
+if (activityLogs.value.length === 0) {
+  addActivityLog(t('activityLogs.sipInitialized'))
+  addActivityLog(t('activityLogs.connectingToServer'))
+  addActivityLog(t('activityLogs.applicationStarted'))
+}
+
 const isStatusMenuOpen = ref(false)
 const remoteAudio = ref<HTMLAudioElement | null>(null)
 
@@ -353,22 +364,9 @@ const deleteTimer = ref<number | null>(null)
 const deleteStartTime = ref<number | null>(null)
 const HOLD_DURATION = 500
 
-const lastDialedNumber = ref('')
-
 const numberInputRef = ref<HTMLInputElement | null>(null)
 
-const isCallActive = computed(() => {
-  const callStates = ['calling', 'ringing', 'connected', 'establishing']
-  return callStates.includes(phoneStore.callState)
-})
-
 const ringTone = ref<HTMLAudioElement | null>(null)
-
-const activityLogs = ref([
-  { id: 1, timestamp: new Date(), message: t('activityLogs.sipInitialized') },
-  { id: 2, timestamp: new Date(Date.now() - 60000), message: t('activityLogs.connectingToServer') },
-  { id: 3, timestamp: new Date(Date.now() - 120000), message: t('activityLogs.applicationStarted') },
-])
 
 const dialSounds: Record<
   '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '*' | '#',
@@ -719,20 +717,6 @@ const formatTime = (date: Date) => {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-
-
-const addActivityLog = (message: string) => {
-  activityLogs.value.unshift({
-    id: Date.now(),
-    timestamp: new Date(),
-    message,
-  })
-
-  if (activityLogs.value.length > 50) {
-    activityLogs.value = activityLogs.value.slice(0, 50)
-  }
 }
 
 const toggleMute = async () => {
