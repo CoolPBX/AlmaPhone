@@ -9,6 +9,7 @@ interface ActivityLog {
 
 interface PhoneActionsComposable {
   lastDialedNumber: Ref<string>
+  displayNumber: Ref<string>
   activityLogs: Ref<ActivityLog[]>
   isCallActive: ComputedRef<boolean>
   addActivityLog: (message: string) => void
@@ -25,6 +26,7 @@ export function usePhoneActions(): PhoneActionsComposable {
   const phoneStore = useSipStore()
 
   const lastDialedNumber = ref('')
+  const displayNumber = ref('')
   const activityLogs = ref<ActivityLog[]>([])
 
   const isCallActive = computed(() => {
@@ -51,6 +53,7 @@ export function usePhoneActions(): PhoneActionsComposable {
   instance = {
     lastDialedNumber,
     activityLogs,
+    displayNumber,
     isCallActive,
     addActivityLog,
     setLastDialedNumber,

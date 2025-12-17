@@ -112,7 +112,7 @@ const phoneStore = useSipStore()
 const authStore = useAuthStore()
 
 const phoneActionsComposable = usePhoneActions()
-const { lastDialedNumber, isCallActive, addActivityLog } = phoneActionsComposable
+const { lastDialedNumber, isCallActive, addActivityLog, displayNumber } = phoneActionsComposable
 
 const showAdvancedDialOptions = ref(false)
 const audioInputDevices = ref<MediaDeviceInfo[]>([])
@@ -123,6 +123,7 @@ const isAutoAnswer = computed(() => phoneStore.isAutoAnswer)
 
 const redial = () => {
   if (lastDialedNumber.value && !isCallActive.value) {
+    displayNumber.value = lastDialedNumber.value
     phoneStore.makeCall(lastDialedNumber.value)
     addActivityLog(`${t('activityLogs.redialing')} ${lastDialedNumber.value}`)
   }

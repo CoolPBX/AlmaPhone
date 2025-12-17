@@ -341,7 +341,7 @@ const phoneStore = useSipStore()
 const agentStore = useAgentStore()
 
 const phoneActionsComposable = usePhoneActions()
-const { lastDialedNumber, activityLogs, isCallActive, addActivityLog } = phoneActionsComposable
+const { lastDialedNumber, activityLogs, isCallActive, addActivityLog, displayNumber } = phoneActionsComposable
 
 if (activityLogs.value.length === 0) {
   addActivityLog(t('activityLogs.sipInitialized'))
@@ -352,7 +352,6 @@ if (activityLogs.value.length === 0) {
 const isStatusMenuOpen = ref(false)
 const remoteAudio = ref<HTMLAudioElement | null>(null)
 
-const displayNumber = ref('')
 
 const currentCallNumber = ref('')
 const callStartTime = ref<Date | null>(null)
