@@ -98,7 +98,7 @@
   <div v-if="showAdvancedDialOptions" @click="showAdvancedDialOptions = false" class="fixed inset-0 z-30"></div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue' // <--- Agregar watch
+import { ref, computed, watch } from 'vue' 
 import { useSipStore } from '@/components/login/SipStore'
 import { useAuthStore } from '@/components/login/AuthStore'
 import { useRouter } from 'vue-router'
