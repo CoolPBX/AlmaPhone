@@ -7,6 +7,7 @@ import {
   type SimpleUserOptions,
 } from 'sip.js/lib/platform/web'
 import { ref } from 'vue'
+import { getServiceWorkerRegistration } from '@/utils/serviceWorkerRegistration'
 
 export interface RecentCall {
   id: number
@@ -33,6 +34,9 @@ export const useSipStore = defineStore('sip', () => {
   const toast = useToast()
   const recentCalls = ref<RecentCall[]>([])
 
+  const notificationPermission = ref<NotificationPermission>('default')
+  let currentNotification: Notification | null = null
+
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
@@ -57,11 +61,17 @@ export const useSipStore = defineStore('sip', () => {
         return
       }
       callState.value = 'ringing'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const session = (simpleUser.value as any)?.session
+      const callerNumber = session?.remoteIdentity?.uri?.user || 'Desconocido'
+
+      showIncomingCallNotification(callerNumber)
 
       if (isAutoAnswer.value) {
         console.log('Auto-answer enabled, answering call')
         try {
           await simpleUser.value?.answer()
+          closeCallNotification()
         } catch (err) {
           console.error('Error auto-answering call:', err)
           error.value = err instanceof Error ? err.message : 'Error auto-answering call'
@@ -84,6 +94,7 @@ export const useSipStore = defineStore('sip', () => {
       callStartTime.value = null
       isMuted.value = false
       isOnHold.value = false
+      closeCallNotification()
       toast.add({
         severity: 'info',
         summary: 'Call Ended',
@@ -227,6 +238,30 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
+
+  const initServiceWorkerListener = () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        console.log('[SipStore] Mensaje recibido del SW:', event.data)
+
+        if (event.data.type === 'CALL_ACTION') {
+          if (!simpleUser.value) {
+            console.error('[SipStore] Error: Intento de acción sin usuario SIP inicializado')
+            return
+          }
+
+          if (event.data.action === 'answer') {
+            console.log('[SipStore] Ejecutando answerCall desde notificación')
+            answerCall()
+          } else if (event.data.action === 'reject') {
+            console.log('[SipStore] Ejecutando endCall desde notificación')
+            endCall()
+          }
+        }
+      })
+    }
+  }
+
   const reconnect = async (): Promise<void> => {
     if (simpleUser.value) {
       connectionState.value = 'reconnecting'
@@ -277,6 +312,8 @@ export const useSipStore = defineStore('sip', () => {
     try {
       if (simpleUser.value) {
         await simpleUser.value.answer()
+      } else {
+        console.error('[SipStore] answerCall falló: simpleUser es null')
       }
     } catch (err) {
       console.error('Error contestando llamada:', err)
@@ -519,6 +556,153 @@ export const useSipStore = defineStore('sip', () => {
     localStorage.removeItem('recentCalls')
   }
 
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    try {
+      if (!('Notification' in window)) {
+        console.warn('Este navegador no soporta notificaciones')
+        toast.add({
+          severity: 'warn',
+          summary: 'Notificaciones No Soportadas',
+          detail: 'Tu navegador no soporta notificaciones',
+          life: 4000,
+        })
+        return false
+      }
+
+      if (Notification.permission === 'granted') {
+        notificationPermission.value = 'granted'
+        return true
+      }
+
+      if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission()
+        notificationPermission.value = permission
+
+        if (permission === 'granted') {
+          toast.add({
+            severity: 'success',
+            summary: 'Notificaciones Habilitadas',
+            detail: 'Recibirás notificaciones con botones de acción',
+            life: 3000,
+          })
+          return true
+        } else if (permission === 'denied') {
+          toast.add({
+            severity: 'warn',
+            summary: 'Notificaciones Bloqueadas',
+            detail: 'Puedes habilitarlas en la configuración del navegador',
+            life: 5000,
+          })
+        }
+      }
+
+      return false
+    } catch (err) {
+      console.error('Error solicitando permisos de notificación:', err)
+      return false
+    }
+  }
+
+  const showIncomingCallNotification = async (callerNumber?: string): Promise<void> => {
+    try {
+      if (Notification.permission !== 'granted') {
+        console.warn('Permisos de notificación no otorgados')
+        return
+      }
+
+      const caller = callerNumber || 'Número desconocido'
+
+      // Intentar usar Service Worker
+      const registration = await getServiceWorkerRegistration()
+
+      if (!registration) {
+        console.warn('Service Worker no disponible, usando notificación simple')
+        showSimpleNotification(caller)
+        return
+      }
+
+      const options = {
+        body: `Llamada entrante de: ${caller}`,
+        icon: '/phone-icon.png',
+        badge: '/badge-icon.png',
+        tag: 'incoming-call',
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 200],
+        silent: false,
+        actions: [
+          {
+            action: 'answer',
+            title: '✅ Contestar',
+          },
+          {
+            action: 'reject',
+            title: '❌ Rechazar',
+          },
+        ],
+        data: {
+          callerNumber: caller,
+          timestamp: Date.now(),
+        },
+      } as NotificationOptions
+
+      await registration.showNotification('📞 Llamada Entrante', options)
+      console.log('Notificación mostrada con Service Worker')
+    } catch (err) {
+      console.error('Error mostrando notificación:', err)
+    }
+  }
+
+  // Función fallback si Service Worker no está disponible
+  const showSimpleNotification = (callerNumber: string): void => {
+    try {
+      if (currentNotification) {
+        currentNotification.close()
+      }
+
+      const options: NotificationOptions & { vibrate: number[] } = {
+        body: `Llamada entrante de: ${callerNumber}\n\nHaz clic para responder`,
+        icon: '/phone-icon.png',
+        badge: '/badge-icon.png',
+        tag: 'incoming-call',
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 200],
+        silent: false,
+      }
+
+      currentNotification = new Notification('📞 Llamada Entrante', options)
+
+      currentNotification.onclick = () => {
+        window.focus()
+        currentNotification?.close()
+      }
+
+      currentNotification.onclose = () => {
+        currentNotification = null
+      }
+    } catch (err) {
+      console.error('Error mostrando notificación simple:', err)
+    }
+  }
+
+  const closeCallNotification = async (): Promise<void> => {
+    try {
+      // Cerrar notificación simple si existe
+      if (currentNotification) {
+        currentNotification.close()
+        currentNotification = null
+      }
+
+      // Cerrar notificaciones del Service Worker
+      const registration = await getServiceWorkerRegistration()
+      if (registration) {
+        const notifications = await registration.getNotifications({ tag: 'incoming-call' })
+        notifications.forEach((notification) => notification.close())
+      }
+    } catch (err) {
+      console.error('Error cerrando notificaciones:', err)
+    }
+  }
+
   return {
     // State
     simpleUser,
@@ -535,6 +719,7 @@ export const useSipStore = defineStore('sip', () => {
     isMuted,
     isOnHold,
     recentCalls,
+    notificationPermission,
 
     // Actions
     initializeSip,
@@ -559,5 +744,9 @@ export const useSipStore = defineStore('sip', () => {
     addRecentCall,
     loadRecentCallsFromStorage,
     clearRecentCalls,
+    closeCallNotification,
+    showIncomingCallNotification,
+    requestNotificationPermission,
+    initServiceWorkerListener,
   }
 })
