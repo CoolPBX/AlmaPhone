@@ -238,30 +238,6 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
-
-  const initServiceWorkerListener = () => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        console.log('[SipStore] Mensaje recibido del SW:', event.data)
-
-        if (event.data.type === 'CALL_ACTION') {
-          if (!simpleUser.value) {
-            console.error('[SipStore] Error: Intento de acción sin usuario SIP inicializado')
-            return
-          }
-
-          if (event.data.action === 'answer') {
-            console.log('[SipStore] Ejecutando answerCall desde notificación')
-            answerCall()
-          } else if (event.data.action === 'reject') {
-            console.log('[SipStore] Ejecutando endCall desde notificación')
-            endCall()
-          }
-        }
-      })
-    }
-  }
-
   const reconnect = async (): Promise<void> => {
     if (simpleUser.value) {
       connectionState.value = 'reconnecting'
@@ -603,26 +579,31 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
-  const showIncomingCallNotification = async (callerNumber?: string): Promise<void> => {
+const showIncomingCallNotification = async (callerNumber?: string): Promise<void> => {
     try {
+      console.log('[DEBUG] showIncomingCallNotification iniciado');
+      
       if (Notification.permission !== 'granted') {
         console.warn('Permisos de notificación no otorgados')
         return
       }
 
       const caller = callerNumber || 'Número desconocido'
+      console.log('[DEBUG] Caller:', caller);
 
-      // Intentar usar Service Worker
       const registration = await getServiceWorkerRegistration()
+      console.log('[DEBUG] Registration obtenido:', registration);
 
       if (!registration) {
-        console.warn('Service Worker no disponible, usando notificación simple')
+        console.warn('[DEBUG] Service Worker no disponible, usando notificación simple')
         showSimpleNotification(caller)
         return
       }
 
+      console.log('[DEBUG] Usando Service Worker para mostrar notificación');
+
       const options = {
-        body: `Llamada entrante de: ${caller}`,
+        body: `Incoming call from: ${caller}`,
         icon: '/phone-icon.png',
         badge: '/badge-icon.png',
         tag: 'incoming-call',
@@ -632,11 +613,11 @@ export const useSipStore = defineStore('sip', () => {
         actions: [
           {
             action: 'answer',
-            title: '✅ Contestar',
+            title: '✅ Answer',
           },
           {
             action: 'reject',
-            title: '❌ Rechazar',
+            title: '❌ Reject',
           },
         ],
         data: {
@@ -645,14 +626,11 @@ export const useSipStore = defineStore('sip', () => {
         },
       } as NotificationOptions
 
-      await registration.showNotification('📞 Llamada Entrante', options)
-      console.log('Notificación mostrada con Service Worker')
+      await registration.showNotification('📞 Incoming call', options)
     } catch (err) {
-      console.error('Error mostrando notificación:', err)
+      console.error('[DEBUG] ❌ Error mostrando notificación:', err)
     }
   }
-
-  // Función fallback si Service Worker no está disponible
   const showSimpleNotification = (callerNumber: string): void => {
     try {
       if (currentNotification) {
@@ -660,7 +638,7 @@ export const useSipStore = defineStore('sip', () => {
       }
 
       const options: NotificationOptions & { vibrate: number[] } = {
-        body: `Llamada entrante de: ${callerNumber}\n\nHaz clic para responder`,
+        body: `Incoming call from: ${callerNumber}\n\n click to answer`,
         icon: '/phone-icon.png',
         badge: '/badge-icon.png',
         tag: 'incoming-call',
@@ -669,7 +647,7 @@ export const useSipStore = defineStore('sip', () => {
         silent: false,
       }
 
-      currentNotification = new Notification('📞 Llamada Entrante', options)
+      currentNotification = new Notification('📞 Incoming call', options)
 
       currentNotification.onclick = () => {
         window.focus()
@@ -686,13 +664,11 @@ export const useSipStore = defineStore('sip', () => {
 
   const closeCallNotification = async (): Promise<void> => {
     try {
-      // Cerrar notificación simple si existe
       if (currentNotification) {
         currentNotification.close()
         currentNotification = null
       }
 
-      // Cerrar notificaciones del Service Worker
       const registration = await getServiceWorkerRegistration()
       if (registration) {
         const notifications = await registration.getNotifications({ tag: 'incoming-call' })
@@ -700,6 +676,31 @@ export const useSipStore = defineStore('sip', () => {
       }
     } catch (err) {
       console.error('Error cerrando notificaciones:', err)
+    }
+  }
+
+  
+
+  const initServiceWorkerListener = () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        console.log('[SipStore] Mensaje recibido del SW:', event.data)
+
+        if (event.data.type === 'CALL_ACTION') {
+          if (!simpleUser.value) {
+            console.error('[SipStore] Error: Intento de acción sin usuario SIP inicializado')
+            return
+          }
+
+          if (event.data.action === 'answer') {
+            console.log('[SipStore] Ejecutando answerCall desde notificación')
+            answerCall()
+          } else if (event.data.action === 'reject') {
+            console.log('[SipStore] Ejecutando endCall desde notificación')
+            endCall()
+          }
+        }
+      })
     }
   }
 

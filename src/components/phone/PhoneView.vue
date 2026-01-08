@@ -53,7 +53,7 @@
                   <div
                     class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
                     <span class="text-xs font-bold">{{ agentStore.agentInfo.agent_name.substring(0, 2).toUpperCase()
-                    }}</span>
+                      }}</span>
                   </div>
 
                   <div class="flex flex-col items-start">
@@ -275,7 +275,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.server')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.server }}
               </span>
@@ -283,7 +283,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.user')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.username }}
               </span>
@@ -291,7 +291,7 @@
             <div class="flex justify-between">
               <span class="text-sm text-gray-600 dark:text-gray-400">{{
                 t('phoneView.domain')
-              }}</span>
+                }}</span>
               <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ phoneStore.sipConfig.domain }}
               </span>
@@ -727,12 +727,15 @@ const toggleMute = async () => {
 watch(
   () => phoneStore.callState,
   (newState, oldState) => {
-    if (newState === 'ended' || newState === 'idle') {
-      stopCallTimer()
-      currentCallNumber.value = ''
-      callStartTime.value = null
-      stopRinging()
-      clearDisplay()
+    if (newState === 'connected' || newState === 'ended' || newState === 'idle') {
+      stopRinging() 
+
+      if (newState === 'ended' || newState === 'idle') {
+        stopCallTimer()
+        currentCallNumber.value = ''
+        callStartTime.value = null
+        clearDisplay()
+      }
     }
 
     if (newState === 'ringing' && oldState !== 'ringing') {
