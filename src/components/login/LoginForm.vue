@@ -99,6 +99,7 @@ const handleLogin = async () => {
   })
 
   if (success) {
+    await sipStore.requestNotificationPermission()
     showExtensionModal.value = true
   }
 }

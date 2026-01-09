@@ -6,9 +6,17 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useSipStore } from '@/components/login/SipStore'
+import { registerServiceWorker } from '@/utils/serviceWorkerRegistration'
 
-onMounted(() => {
+const sipStore = useSipStore()
+
+onMounted(async () => {
   console.log('AlmaPhone - Application Started')
+ 
+  await registerServiceWorker()
+  
+  sipStore.initServiceWorkerListener() 
 })
 </script>
 
