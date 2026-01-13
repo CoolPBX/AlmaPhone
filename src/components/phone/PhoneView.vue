@@ -129,7 +129,7 @@
 
       <div class="mb-6">
         <div class="grid grid-cols-3 gap-3">
-          <button v-for="key in dialpadKeys" :key="key.value" @click="addDigit(key.value)" :disabled="isCallActive"
+          <button v-for="key in dialpadKeys" :key="key.value" @click="addDigit(key.value)"
             class="dial-button relative flex flex-col items-center justify-center h-16 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ key.value }}</span>
             <span v-if="key.letters" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -543,7 +543,11 @@ const addDigit = (digit: string) => {
     sound.play()
   }
 
-  displayNumber.value += digit
+  if (isCallActive.value) {
+    phoneStore.sendDTMF(digit)
+  } else {
+    displayNumber.value += digit
+  }
 }
 
 const startDelete = (event: MouseEvent | TouchEvent) => {
@@ -728,7 +732,7 @@ watch(
   () => phoneStore.callState,
   (newState, oldState) => {
     if (newState === 'connected' || newState === 'ended' || newState === 'idle') {
-      stopRinging() 
+      stopRinging()
 
       if (newState === 'ended' || newState === 'idle') {
         stopCallTimer()
