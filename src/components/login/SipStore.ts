@@ -8,6 +8,7 @@ import {
 } from 'sip.js/lib/platform/web'
 import { ref } from 'vue'
 import { getServiceWorkerRegistration } from '@/utils/serviceWorkerRegistration'
+import config from '@/config'
 
 export interface RecentCall {
   id: number
@@ -40,10 +41,10 @@ export const useSipStore = defineStore('sip', () => {
   const audioElement = ref<HTMLAudioElement | null>(null)
 
   const sipConfig = ref({
-    server: import.meta.env.VITE_SIP_SERVER_URL || '',
+    server: config.sip.serverUrl,
     username: '',
     password: '',
-    domain: import.meta.env.VITE_SIP_DOMAIN || '',
+    domain: config.sip.domain,
     displayName: '',
   })
 
@@ -579,20 +580,20 @@ export const useSipStore = defineStore('sip', () => {
     }
   }
 
-const showIncomingCallNotification = async (callerNumber?: string): Promise<void> => {
+  const showIncomingCallNotification = async (callerNumber?: string): Promise<void> => {
     try {
-      console.log('[DEBUG] showIncomingCallNotification iniciado');
-      
+      console.log('[DEBUG] showIncomingCallNotification iniciado')
+
       if (Notification.permission !== 'granted') {
         console.warn('Permisos de notificación no otorgados')
         return
       }
 
       const caller = callerNumber || 'Número desconocido'
-      console.log('[DEBUG] Caller:', caller);
+      console.log('[DEBUG] Caller:', caller)
 
       const registration = await getServiceWorkerRegistration()
-      console.log('[DEBUG] Registration obtenido:', registration);
+      console.log('[DEBUG] Registration obtenido:', registration)
 
       if (!registration) {
         console.warn('[DEBUG] Service Worker no disponible, usando notificación simple')
@@ -600,7 +601,7 @@ const showIncomingCallNotification = async (callerNumber?: string): Promise<void
         return
       }
 
-      console.log('[DEBUG] Usando Service Worker para mostrar notificación');
+      console.log('[DEBUG] Usando Service Worker para mostrar notificación')
 
       const options = {
         body: `Incoming call from: ${caller}`,
@@ -678,8 +679,6 @@ const showIncomingCallNotification = async (callerNumber?: string): Promise<void
       console.error('Error cerrando notificaciones:', err)
     }
   }
-
-  
 
   const initServiceWorkerListener = () => {
     if ('serviceWorker' in navigator) {

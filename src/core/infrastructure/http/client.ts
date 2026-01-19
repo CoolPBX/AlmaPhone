@@ -1,9 +1,10 @@
 import type { AxiosInstance, AxiosResponse } from 'axios'
 import axios from 'axios'
+import config from '@/config'
 
 const httpClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
-  timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000,
+  baseURL: config.api.baseUrl,
+  timeout: config.api.timeout || 30000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

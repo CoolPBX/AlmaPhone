@@ -12,11 +12,12 @@ import {
 } from '../../domain/schemas/AgentSchemas'
 import { Either, left, right } from '@/utils/Either'
 import axios, { AxiosError } from 'axios'
+import config from '@/config'
 
 export class AgentRepository implements AgentRepositoryContract {
   private readonly baseUrl: string
 
-  constructor(baseUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api') {
+  constructor(baseUrl: string = config.api.baseUrl) {
     this.baseUrl = baseUrl
   }
 

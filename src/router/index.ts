@@ -8,6 +8,7 @@ import {
   withLayout,
   type RouteConfig,
 } from './routeHelpers'
+import config from '@/config'
 
 const routeConfigs: RouteConfig[] = [
   createPublicRoute('/login', () => import('@/components/login/LoginForm.vue'), {
@@ -38,7 +39,7 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(config.router.baseUrl),
   routes,
 })
 
