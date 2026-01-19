@@ -53,6 +53,7 @@ export const useSipStore = defineStore('sip', () => {
       callState.value = 'calling'
       callStartTime.value = new Date()
     },
+    
     onCallReceived: async (): Promise<void> => {
       console.log('Call received')
       if (isDnd.value) {
